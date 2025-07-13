@@ -27,8 +27,14 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`追踪网站运行在 http://localhost:${PORT}`);
-    console.log(`生产环境访问: https://trackall.huodaiagent.com`);
-    console.log('支持的快递公司：DHL, UPS, FedEx, 以及主要IATA航司');
-}); 
+// 本地开发时启动服务器
+if (process.env.NODE_ENV !== 'production') {
+    app.listen(PORT, () => {
+        console.log(`追踪网站运行在 http://localhost:${PORT}`);
+        console.log(`生产环境访问: https://trackall.huodaiagent.com`);
+        console.log('支持的快递公司：DHL, UPS, FedEx, 以及主要IATA航司');
+    });
+}
+
+// 导出app供Vercel使用
+module.exports = app; 
