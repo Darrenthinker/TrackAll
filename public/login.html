@@ -98,9 +98,11 @@
             display: none;
         }
 
-        .loading {
-            opacity: 0.7;
-            pointer-events: none;
+        .success-message {
+            color: #27ae60;
+            text-align: center;
+            margin-top: 15px;
+            display: none;
         }
 
         .back-link {
@@ -141,6 +143,7 @@
         </form>
 
         <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
 
         <div class="back-link">
             <a href="/">← 返回首页</a>
@@ -148,46 +151,43 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // 简单的前端验证
+        const ADMIN_CREDENTIALS = {
+            username: 'admin',
+            password: 'TrackAll2025!'
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const errorMessage = document.getElementById('errorMessage');
+            const successMessage = document.getElementById('successMessage');
             const loginBtn = document.querySelector('.login-btn');
             
-            // 显示加载状态
-            loginBtn.textContent = '登录中...';
-            loginBtn.classList.add('loading');
+            // 隐藏之前的消息
             errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
             
-            try {
-                const response = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password })
-                });
+            // 验证用户名和密码
+            if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+                // 登录成功
+                successMessage.textContent = '登录成功，正在跳转...';
+                successMessage.style.display = 'block';
                 
-                const data = await response.json();
+                // 设置登录状态
+                localStorage.setItem('adminLoggedIn', 'true');
+                localStorage.setItem('adminUsername', username);
                 
-                if (response.ok) {
-                    // 登录成功，存储token并跳转
-                    localStorage.setItem('adminToken', data.token);
+                // 延迟跳转
+                setTimeout(() => {
                     window.location.href = '/admin.html';
-                } else {
-                    // 登录失败
-                    errorMessage.textContent = data.message || '登录失败';
-                    errorMessage.style.display = 'block';
-                }
-            } catch (error) {
-                errorMessage.textContent = '网络错误，请重试';
+                }, 1000);
+            } else {
+                // 登录失败
+                errorMessage.textContent = '用户名或密码错误';
                 errorMessage.style.display = 'block';
-            } finally {
-                // 恢复按钮状态
-                loginBtn.textContent = '登录';
-                loginBtn.classList.remove('loading');
             }
         });
     </script>
