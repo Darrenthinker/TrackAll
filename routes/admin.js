@@ -1,152 +1,190 @@
 const express = require('express');
 const router = express.Router();
-const mysql = require('mysql2/promise');
+const { QueryLog, User, Notification } = require('../models');
+const jwt = require('jsonwebtoken');
 
-// 创建数据库连接池
-const pool = mysql.createPool({
-    host: 'rm-bp19c413117y10tq0vo.mysql.rds.aliyuncs.com',
-    port: 3306,
-    user: 'root',
-    password: 'TrackAll2025!',
-    database: 'tracking_system'
+// JWT密钥 (生产环境应该使用环境变量)
+const JWT_SECRET = process.env.JWT_SECRET || 'trackall-admin-secret-2025';
+
+// 默认管理员账户
+const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'TrackAll2025!'
+};
+
+// 身份验证中间件
+const authenticateAdmin = (req, res, next) => {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+        return res.status(401).json({ message: '未授权访问' });
+    }
+    
+    try {
+        const decoded = jwt.verify(token, JWT_SECRET);
+        req.admin = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: '无效的访问令牌' });
+    }
+};
+
+// 管理员登录
+router.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        
+        // 验证用户名和密码
+        if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+            // 生成JWT token
+            const token = jwt.sign(
+                { username: username, role: 'admin' },
+                JWT_SECRET,
+                { expiresIn: '24h' }
+            );
+            
+            res.json({
+                success: true,
+                token: token,
+                message: '登录成功'
+            });
+        } else {
+            res.status(401).json({
+                success: false,
+                message: '用户名或密码错误'
+            });
+        }
+    } catch (error) {
+        console.error('登录错误:', error);
+        res.status(500).json({
+            success: false,
+            message: '服务器错误'
+        });
+    }
 });
+
+// 验证token
+router.get('/verify', authenticateAdmin, (req, res) => {
+    res.json({
+        success: true,
+        admin: req.admin
+    });
+});
+
+// 以下所有路由都需要身份验证
+router.use(authenticateAdmin);
 
 // 仪表板数据
 router.get('/dashboard', async (req, res) => {
     try {
-        const connection = await pool.getConnection();
+        const userCount = await User.count();
+        const queryCount = await QueryLog.count();
+        const successCount = await QueryLog.count({ where: { status: 'success' } });
         
-        try {
-            // 获取用户总数
-            const [userCount] = await connection.execute('SELECT COUNT(*) as count FROM users');
-            
-            // 获取查询总数
-            const [queryCount] = await connection.execute('SELECT COUNT(*) as count FROM query_logs');
-            
-            // 获取成功查询数
-            const [successCount] = await connection.execute(
-                'SELECT COUNT(*) as count FROM query_logs WHERE query_result = "success"'
-            );
-            
-            // 获取平均响应时间
-            const [avgTime] = await connection.execute(
-                'SELECT AVG(response_time) as avg_time FROM query_logs'
-            );
-            
-            // 获取最近查询记录
-            const [recentQueries] = await connection.execute(`
-                SELECT tracking_number, carrier, query_result, response_time, created_at 
-                FROM query_logs 
-                ORDER BY created_at DESC 
-                LIMIT 10
-            `);
-
-            res.json({
-                success: true,
-                totalUsers: userCount[0].count,
-                totalQueries: queryCount[0].count,
-                successfulQueries: successCount[0].count,
-                avgResponseTime: Math.round(avgTime[0].avg_time || 0),
-                recentQueries: recentQueries
-            });
-            
-        } finally {
-            connection.release();
-        }
-        
-    } catch (error) {
-        console.error('获取仪表板数据失败:', error.message);
-        res.status(500).json({ 
-            success: false, 
-            message: '获取仪表板数据失败' 
+        // 计算平均响应时间
+        const avgResponse = await QueryLog.findOne({
+            attributes: [
+                [require('sequelize').fn('AVG', require('sequelize').col('response_time')), 'avg_time']
+            ]
         });
+        
+        const avgResponseTime = avgResponse?.dataValues?.avg_time || 0;
+        
+        res.json({
+            userCount,
+            queryCount,
+            successCount,
+            avgResponseTime: Math.round(avgResponseTime)
+        });
+    } catch (error) {
+        console.error('获取仪表板数据错误:', error);
+        res.status(500).json({ message: '获取数据失败' });
     }
 });
 
-// 用户管理数据
+// 用户管理
 router.get('/users', async (req, res) => {
     try {
-        const { page = 1, pageSize = 20 } = req.query;
-        const offset = (page - 1) * pageSize;
-        
-        const connection = await pool.getConnection();
-        
-        try {
-            // 获取用户总数
-            const [countResult] = await connection.execute('SELECT COUNT(*) as total FROM users');
-            const total = countResult[0].total;
-            
-            // 获取用户列表
-            const [users] = await connection.execute(`
-                SELECT id, email, user_type, status, created_at, last_login
-                FROM users 
-                ORDER BY created_at DESC 
-                LIMIT ${parseInt(pageSize)} OFFSET ${offset}
-            `);
-
-            res.json({
-                success: true,
-                users: users,
-                total: total,
-                page: parseInt(page),
-                pageSize: parseInt(pageSize),
-                totalPages: Math.ceil(total / pageSize)
-            });
-            
-        } finally {
-            connection.release();
-        }
-        
-    } catch (error) {
-        console.error('获取用户数据失败:', error.message);
-        res.status(500).json({ 
-            success: false, 
-            message: '获取用户数据失败' 
+        const users = await User.findAll({
+            order: [['created_at', 'DESC']],
+            limit: 100
         });
+        
+        res.json(users);
+    } catch (error) {
+        console.error('获取用户数据错误:', error);
+        res.status(500).json({ message: '获取用户数据失败' });
     }
 });
 
-// 查询记录数据
+// 查询记录
 router.get('/queries', async (req, res) => {
     try {
-        const { page = 1, pageSize = 20 } = req.query;
-        const offset = (page - 1) * pageSize;
-        
-        const connection = await pool.getConnection();
-        
-        try {
-            // 获取查询总数
-            const [countResult] = await connection.execute('SELECT COUNT(*) as total FROM query_logs');
-            const total = countResult[0].total;
-            
-            // 获取查询列表
-            const [queries] = await connection.execute(`
-                SELECT q.*, u.email as user_email
-                FROM query_logs q
-                LEFT JOIN users u ON q.user_id = u.id
-                ORDER BY q.created_at DESC 
-                LIMIT ${parseInt(pageSize)} OFFSET ${offset}
-            `);
-
-            res.json({
-                success: true,
-                queries: queries,
-                total: total,
-                page: parseInt(page),
-                pageSize: parseInt(pageSize),
-                totalPages: Math.ceil(total / pageSize)
-            });
-            
-        } finally {
-            connection.release();
-        }
-        
-    } catch (error) {
-        console.error('获取查询数据失败:', error.message);
-        res.status(500).json({ 
-            success: false, 
-            message: '获取查询数据失败' 
+        const queries = await QueryLog.findAll({
+            include: [{
+                model: User,
+                attributes: ['email']
+            }],
+            order: [['created_at', 'DESC']],
+            limit: 100
         });
+        
+        res.json(queries);
+    } catch (error) {
+        console.error('获取查询记录错误:', error);
+        res.status(500).json({ message: '获取查询记录失败' });
+    }
+});
+
+// 通知管理
+router.get('/notifications', async (req, res) => {
+    try {
+        const notifications = await Notification.findAll({
+            include: [{
+                model: User,
+                attributes: ['email']
+            }],
+            order: [['created_at', 'DESC']],
+            limit: 100
+        });
+        
+        res.json(notifications);
+    } catch (error) {
+        console.error('获取通知数据错误:', error);
+        res.status(500).json({ message: '获取通知数据失败' });
+    }
+});
+
+// 通知统计
+router.get('/notifications/stats', async (req, res) => {
+    try {
+        const totalCount = await Notification.count();
+        const pendingCount = await Notification.count({ where: { status: 'pending' } });
+        const todayCount = await Notification.count({
+            where: {
+                created_at: {
+                    [require('sequelize').Op.gte]: new Date().setHours(0, 0, 0, 0)
+                }
+            }
+        });
+        
+        const activeUsers = await User.count({
+            where: {
+                created_at: {
+                    [require('sequelize').Op.gte]: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+                }
+            }
+        });
+        
+        res.json({
+            totalCount,
+            pendingCount,
+            todayCount,
+            activeUsers
+        });
+    } catch (error) {
+        console.error('获取通知统计错误:', error);
+        res.status(500).json({ message: '获取通知统计失败' });
     }
 });
 
