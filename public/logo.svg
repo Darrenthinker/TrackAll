@@ -1,59 +1,29 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="mainGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#6366f1;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
     </linearGradient>
-    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
-    </linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
       <feMerge> 
         <feMergeNode in="coloredBlur"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="2" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.25"/>
-    </filter>
   </defs>
   
-  <!-- 背景 -->
-  <rect width="64" height="64" rx="16" fill="url(#mainGrad)" filter="url(#shadow)"/>
+  <!-- 背景圆角矩形 -->
+  <rect width="64" height="64" rx="16" fill="url(#bgGrad)" filter="url(#glow)"/>
   
   <!-- 主要字母 T -->
-  <g filter="url(#glow)">
-    <!-- T的横杠 -->
-    <rect x="16" y="18" width="32" height="6" rx="3" fill="url(#textGrad)"/>
-    <!-- T的竖杠 -->
-    <rect x="29" y="18" width="6" height="28" rx="3" fill="url(#textGrad)"/>
-  </g>
+  <path d="M 16 20 L 48 20 L 48 28 L 36 28 L 36 48 L 28 48 L 28 28 L 16 28 Z" fill="#ffffff" opacity="0.95"/>
   
-  <!-- 追踪标识 -->
-  <g>
-    <!-- 追踪路径 -->
-    <path d="M 45 15 Q 52 12 58 8" stroke="#10b981" stroke-width="2" fill="none" opacity="0.8" stroke-linecap="round"/>
-    <path d="M 45 15 Q 38 18 32 22" stroke="#10b981" stroke-width="2" fill="none" opacity="0.6" stroke-linecap="round"/>
-    
-    <!-- GPS定位点 -->
-    <circle cx="45" cy="15" r="4" fill="#10b981" filter="url(#glow)"/>
-    <circle cx="45" cy="15" r="2" fill="#ffffff"/>
-    <circle cx="45" cy="15" r="6" fill="none" stroke="#10b981" stroke-width="1" opacity="0.4"/>
-  </g>
+  <!-- 追踪定位点 -->
+  <circle cx="44" cy="16" r="4" fill="#10b981"/>
+  <circle cx="44" cy="16" r="2" fill="#ffffff"/>
   
-  <!-- 底部装饰 -->
-  <g opacity="0.6">
-    <rect x="12" y="50" width="40" height="2" rx="1" fill="#ffffff" opacity="0.7"/>
-    <rect x="16" y="54" width="32" height="1" rx="0.5" fill="#ffffff" opacity="0.5"/>
-    <rect x="20" y="57" width="24" height="1" rx="0.5" fill="#ffffff" opacity="0.3"/>
-  </g>
-  
-  <!-- 小装饰点 -->
-  <circle cx="20" cy="12" r="1.5" fill="#ffffff" opacity="0.4"/>
-  <circle cx="44" cy="52" r="1.5" fill="#ffffff" opacity="0.4"/>
-  <circle cx="12" cy="32" r="1" fill="#ffffff" opacity="0.3"/>
-  <circle cx="52" cy="32" r="1" fill="#ffffff" opacity="0.3"/>
+  <!-- 装饰追踪线 -->
+  <rect x="12" y="52" width="40" height="2" fill="#ffffff" opacity="0.6" rx="1"/>
+  <rect x="16" y="56" width="32" height="2" fill="#ffffff" opacity="0.4" rx="1"/>
 </svg> 
