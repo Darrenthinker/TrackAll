@@ -4453,9 +4453,35 @@
             const firstEvent = events[events.length - 1]; // 最早的事件
             const lastEvent = events[0]; // 最新的事件
             
-            // 简化地址显示
-            const from = firstEvent.location.split(',')[0] || firstEvent.location;
-            const to = lastEvent.location.split(',')[0] || lastEvent.location;
+            // 安全地提取地址信息，兼容不同的数据结构
+            function extractLocation(event) {
+                if (!event) return '未知';
+                
+                // 检查是否有location字段
+                if (event.location) {
+                    // 如果location是对象（DHL API格式）
+                    if (typeof event.location === 'object' && event.location.address) {
+                        return event.location.address.addressLocality || '未知';
+                    }
+                    // 如果location是字符串
+                    if (typeof event.location === 'string') {
+                        return event.location.split(',')[0] || event.location;
+                    }
+                }
+                
+                // 备选：检查description中是否包含地址信息
+                if (event.description && typeof event.description === 'string') {
+                    const match = event.description.match(/([A-Z\s]+)\s*-\s*([A-Z\s,]+)/);
+                    if (match) {
+                        return match[1].trim();
+                    }
+                }
+                
+                return '未知';
+            }
+            
+            const from = extractLocation(firstEvent);
+            const to = extractLocation(lastEvent);
             
             return { from, to };
         }
