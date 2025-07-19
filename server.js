@@ -95,11 +95,11 @@ function detectCarrier(trackingNumber, forcedCarrier) {
     }
     
     const cleanNumber = trackingNumber.replace(/\s+/g, '').toUpperCase();
-    console.log(`识别单号: ${cleanNumber}`);
+    console.log(`识别单号: ${cleanNumber}, 长度: ${cleanNumber.length}`);
     
-    // UPS模式识别（优先级最高，格式最特殊）
-    if (/^1Z[A-Z0-9]{16}$/.test(cleanNumber)) {
-        console.log('匹配UPS模式');
+    // UPS模式识别（1Z开头，18位字符）
+    if (/^1Z[A-Z0-9]{16}$/.test(cleanNumber) && cleanNumber.length === 18) {
+        console.log('匹配UPS模式（18位）');
         return 'UPS';
     }
     
@@ -109,16 +109,16 @@ function detectCarrier(trackingNumber, forcedCarrier) {
         return 'Airline';
     }
     
-    // FedEx模式识别（12位、14位、20位数字）
-    if (/^(\d{12}|\d{14}|\d{20})$/.test(cleanNumber)) {
-        console.log('匹配FedEx模式');
-        return 'FedEx';
-    }
-    
-    // DHL模式识别（10-11位数字或字母+数字组合）
-    if (/^(\d{10,11}|[A-Z]{3}\d{9})$/.test(cleanNumber)) {
+    // DHL模式识别（优先级提高，覆盖更广）
+    if (/^(\d{10,12}|[A-Z]{3}\d{9}|[A-Z]{2}\d{9,11})$/.test(cleanNumber)) {
         console.log('匹配DHL模式');
         return 'DHL';
+    }
+    
+    // FedEx模式识别（非常特定的格式，避免与DHL冲突）
+    if (/^(\d{14}|\d{20}|\d{15})$/.test(cleanNumber)) {
+        console.log('匹配FedEx模式');
+        return 'FedEx';
     }
     
     // 如果都不匹配，默认尝试DHL（最常见）
