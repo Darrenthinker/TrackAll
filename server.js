@@ -157,8 +157,7 @@ async function trackDHL(trackingNumber) {
                 origin: shipment.origin?.address?.addressLocality,
                 destination: shipment.destination?.address?.addressLocality,
                 estimatedDelivery: shipment.estimatedTimeOfDelivery,
-                events: shipment.events || [],
-                source: 'DHL API'
+                events: shipment.events || []
             };
         } else {
             // DHL没有数据，尝试17track
@@ -234,15 +233,14 @@ async function try17track(trackingNumber, originalCarrier) {
                     carrier: originalCarrier,
                     trackingNumber: trackingNumber,
                     status: trackInfo.track[0].description || 'In Transit',
-                    service: '17track数据',
+                    service: '国际快递追踪',
                     origin: trackInfo.track[trackInfo.track.length - 1]?.location,
                     destination: trackInfo.track[0]?.location,
                     events: trackInfo.track.map(event => ({
                         timestamp: event.time_iso,
                         description: event.description,
                         location: { address: { addressLocality: event.location } }
-                    })),
-                    source: '17track (备选服务)'
+                    }))
                 };
             }
         }
@@ -253,8 +251,7 @@ async function try17track(trackingNumber, originalCarrier) {
             success: false,
             carrier: originalCarrier,
             trackingNumber: trackingNumber,
-            message: `${originalCarrier}和17track系统中都未找到此包裹号`,
-            source: '17track (备选服务已尝试)'
+            message: `${originalCarrier}系统中未找到此包裹号`
         };
         
     } catch (error) {
@@ -272,8 +269,7 @@ async function try17track(trackingNumber, originalCarrier) {
             success: false,
             carrier: originalCarrier,
             trackingNumber: trackingNumber,
-            message: `${originalCarrier}系统中未找到此包裹号`,
-            source: '17track (备选服务失败)'
+            message: `${originalCarrier}系统中未找到此包裹号`
         };
     }
 }
@@ -316,7 +312,7 @@ async function trackUnknown(trackingNumber) {
         success: false,
         carrier: 'Unknown',
         trackingNumber: trackingNumber,
-        message: '无法识别承运商类型，请确认单号格式'
+        message: '请确认单号格式是否正确'
     };
 }
 
