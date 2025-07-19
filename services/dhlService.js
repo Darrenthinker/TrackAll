@@ -1,5 +1,4 @@
 const axios = require('axios');
-const configService = require('./configService');
 
 class DHLService {
     constructor() {
@@ -120,14 +119,18 @@ class DHLService {
             
             // 3. 尝试从数据库获取项目配置
             if (projectId) {
-                const configService = require('./configService');
-                const projectConfig = await configService.getProjectConfig(projectId, ['dhl_api_key', 'dhl_api_secret']);
-                
-                if (projectConfig.dhl_api_key && projectConfig.dhl_api_secret) {
-                    return {
-                        apiKey: projectConfig.dhl_api_key,
-                        apiSecret: projectConfig.dhl_api_secret
-                    };
+                try {
+                    const configService = require('./configService');
+                    const projectConfig = await configService.getProjectConfig(projectId, ['dhl_api_key', 'dhl_api_secret']);
+                    
+                    if (projectConfig.dhl_api_key && projectConfig.dhl_api_secret) {
+                        return {
+                            apiKey: projectConfig.dhl_api_key,
+                            apiSecret: projectConfig.dhl_api_secret
+                        };
+                    }
+                } catch (dbError) {
+                    console.log('数据库配置服务不可用，跳过数据库配置获取');
                 }
             }
             
