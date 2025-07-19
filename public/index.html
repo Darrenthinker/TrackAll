@@ -81,6 +81,7 @@
 
 
         .search-box {
+            position: relative;
             width: 100%;
             min-height: 300px;
             max-height: 500px;
@@ -115,6 +116,65 @@
 
         .search-box::placeholder {
             color: #9aa0a6;
+        }
+
+        /* 输入框错误提示样式 */
+        .input-error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #dc3545;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.2);
+            border: 1px solid #dc3545;
+            animation: fadeInScale 0.3s ease;
+            z-index: 10;
+            backdrop-filter: blur(2px);
+        }
+
+        .input-error-message::before {
+            content: '⚠️';
+            font-size: 18px;
+        }
+
+        .input-error-message.show {
+            display: flex;
+        }
+
+        .search-box.error {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
         }
 
         /* 标签样式 - 17track一体化风格 */
@@ -3246,8 +3306,10 @@
                             <div class="placeholder-line">每行输入一个单号，最多只允许提交40个单号</div>
                             <div class="placeholder-line">支持航空查询，格式：123-12345678。</div>
                         </div>
+                        <div id="inputErrorMessage" class="input-error-message" style="display: none;"></div>
                     </div>
                     <textarea id="hiddenTextarea" class="hidden-input"></textarea>
+                    <div id="inputErrorMessage" class="input-error-message" style="display: none;"></div>
                     <div class="input-actions">
                         <button type="button" id="filterButton" class="action-btn">
                             <i class="fas fa-filter"></i>
@@ -3820,6 +3882,39 @@
             }
         }
 
+        // 显示输入框错误提示
+        function showInputError(message) {
+            const errorElement = document.getElementById('inputErrorMessage');
+            const searchBox = document.getElementById('trackingNumbers');
+            
+            errorElement.textContent = message;
+            errorElement.style.display = 'flex';
+            searchBox.classList.add('error');
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                hideInputError();
+            }, 3000);
+        }
+
+        // 隐藏输入框错误提示
+        function hideInputError() {
+            const errorElement = document.getElementById('inputErrorMessage');
+            const searchBox = document.getElementById('trackingNumbers');
+            
+            errorElement.style.display = 'none';
+            searchBox.classList.remove('error');
+        }
+
+        // 用户开始输入时隐藏错误提示
+        function setupInputErrorHandling() {
+            const searchBox = document.getElementById('trackingNumbers');
+            
+            searchBox.addEventListener('click', hideInputError);
+            searchBox.addEventListener('focus', hideInputError);
+            searchBox.addEventListener('input', hideInputError);
+        }
+
         document.getElementById('trackingForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -3827,12 +3922,12 @@
                 .filter(line => line.length >= 3 && line.length <= 50 && !isInvalidContent(line));
             
             if (trackingNumbers.length === 0) {
-                alert('请输入有效的追踪单号');
+                showInputError('请输入有效的追踪单号');
                 return;
             }
 
             if (trackingNumbers.length > 40) {
-                alert('最多只能查询40个单号');
+                showInputError('最多只能查询40个单号');
                 return;
             }
 
@@ -5343,6 +5438,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             addStatusBarHoverEffect();
             initializeUserLogin();
+            setupInputErrorHandling();
         });
 
         // 初始化用户登录状态

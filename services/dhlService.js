@@ -3,10 +3,17 @@ const configService = require('./configService');
 
 class DHLService {
     constructor() {
-        this.baseURL = 'https://api-eu.dhl.com/track/shipments';
+        // 支持多个DHL API端点
+        this.apiEndpoints = [
+            'https://api-eu.dhl.com/track/shipments',
+            'https://api.dhl.com/track/shipments',
+            'https://express.api.dhl.com/mydhlapi/shipments'
+        ];
+        
         // 默认配置，会被项目配置覆盖
-        this.apiKey = process.env.DHL_API_KEY || 'O0ARX1D6fx6cjlzQ9z2P1RvLgrZhuNY7';
-        this.apiSecret = process.env.DHL_API_SECRET || '9yE31yUNHsE5hfYB';
+        this.apiKey = process.env.DHL_API_KEY || 'demo-key';
+        this.apiSecret = process.env.DHL_API_SECRET || 'demo-secret';
+        this.timeout = 10000; // 10秒超时
     }
 
     // 获取认证头
@@ -14,8 +21,10 @@ class DHLService {
         const auth = Buffer.from(`${this.apiKey}:${this.apiSecret}`).toString('base64');
         return {
             'Authorization': `Basic ${auth}`,
+            'DHL-API-Key': this.apiKey,
             'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Accept': 'application/json',
+            'User-Agent': 'TrackAll/1.0'
         };
     }
 
@@ -30,8 +39,10 @@ class DHLService {
             const auth = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64');
             return {
                 'Authorization': `Basic ${auth}`,
+                'DHL-API-Key': config.apiKey,
                 'Content-Type': 'application/json',
-                'Accept': 'application/json'
+                'Accept': 'application/json',
+                'User-Agent': 'TrackAll/1.0'
             };
         } catch (error) {
             console.error('获取项目DHL配置失败:', error);
@@ -39,23 +50,113 @@ class DHLService {
         }
     }
 
+    // 尝试多个API端点
+    async tryMultipleEndpoints(trackingNumber, projectId = null) {
+        const headers = await this.getProjectAuthHeaders(projectId);
+        let lastError = null;
+
+        for (let i = 0; i < this.apiEndpoints.length; i++) {
+            const endpoint = this.apiEndpoints[i];
+            try {
+                console.log(`尝试DHL端点 ${i + 1}/${this.apiEndpoints.length}: ${endpoint}`);
+                
+                const response = await axios.get(endpoint, {
+                    headers: headers,
+                    params: {
+                        trackingNumber: trackingNumber
+                    },
+                    timeout: this.timeout,
+                    validateStatus: (status) => status < 500 // 只有5xx才认为是错误
+                });
+
+                if (response.status === 200 && response.data) {
+                    console.log(`DHL端点 ${endpoint} 成功响应`);
+                    return response.data;
+                } else if (response.status === 404) {
+                    throw new Error('包裹号不存在');
+                } else if (response.status === 401) {
+                    throw new Error('API认证失败，请检查密钥配置');
+                } else {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+            } catch (error) {
+                lastError = error;
+                console.warn(`DHL端点 ${endpoint} 失败:`, error.message);
+                
+                if (error.code === 'ENOTFOUND' || error.code === 'ECONNREFUSED') {
+                    console.warn('网络连接问题，尝试下一个端点...');
+                    continue;
+                } else if (error.response?.status === 401) {
+                    console.error('API认证失败，停止尝试其他端点');
+                    break;
+                } else if (error.response?.status === 404) {
+                    console.warn('包裹号不存在，尝试下一个端点...');
+                    continue;
+                }
+            }
+        }
+
+        throw lastError || new Error('所有DHL端点都无法访问');
+    }
+
     // 追踪单个包裹
     async trackShipment(trackingNumber, projectId = null) {
         try {
-            const headers = await this.getProjectAuthHeaders(projectId);
+            console.log(`开始追踪DHL包裹: ${trackingNumber}`);
             
-            const response = await axios.get(`${this.baseURL}`, {
-                headers: headers,
-                params: {
-                    trackingNumber: trackingNumber
-                }
-            });
+            // 验证单号格式
+            if (!this.validateTrackingNumber(trackingNumber)) {
+                throw new Error('DHL包裹号格式不正确');
+            }
 
-            return this.formatTrackingData(response.data);
+            const rawData = await this.tryMultipleEndpoints(trackingNumber, projectId);
+            const result = this.formatTrackingData(rawData);
+            
+            if (!result.found) {
+                console.log(`DHL包裹 ${trackingNumber} 未找到`);
+                return {
+                    success: false,
+                    carrier: 'DHL',
+                    trackingNumber,
+                    message: result.message || 'DHL系统中未找到此包裹号'
+                };
+            }
+            
+            console.log(`DHL包裹 ${trackingNumber} 追踪成功`);
+            return {
+                success: true,
+                carrier: 'DHL',
+                trackingNumber: result.trackingNumber,
+                status: result.status,
+                service: result.service,
+                origin: result.origin,
+                destination: result.destination,
+                estimatedDelivery: result.estimatedDelivery,
+                events: result.events
+            };
         } catch (error) {
-            console.error('DHL API调用失败:', error.response?.data || error.message);
-            throw new Error('查询DHL包裹信息失败');
+            console.error('DHL追踪失败:', error.message);
+            
+            // 返回错误信息而不是抛出异常
+            return {
+                success: false,
+                carrier: 'DHL',
+                trackingNumber,
+                message: `DHL追踪失败: ${error.message}`
+            };
         }
+    }
+
+    // 验证DHL单号格式
+    validateTrackingNumber(trackingNumber) {
+        const patterns = [
+            /^\d{10,12}$/,           // 数字格式
+            /^[A-Z]{3}\d{9}$/,       // 3字母+9数字
+            /^JD\d{11}$/,            // JD开头
+            /^[0-9]{10,14}$/         // 10-14位数字
+        ];
+        
+        return patterns.some(pattern => pattern.test(trackingNumber));
     }
 
     // 批量追踪包裹
@@ -66,9 +167,10 @@ class DHLService {
             
             return results.map((result, index) => ({
                 trackingNumber: trackingNumbers[index],
-                success: result.status === 'fulfilled',
+                success: result.status === 'fulfilled' && result.value.success,
                 data: result.status === 'fulfilled' ? result.value : null,
-                error: result.status === 'rejected' ? result.reason.message : null
+                error: result.status === 'rejected' ? result.reason.message : 
+                       (result.value && !result.value.success ? result.value.message : null)
             }));
         } catch (error) {
             console.error('批量追踪失败:', error);
@@ -140,10 +242,14 @@ class DHLService {
     async checkServiceStatus(projectId = null) {
         try {
             // 使用一个测试单号检查API是否正常
-            await this.trackShipment('1234567890', projectId);
-            return { status: 'ok', message: 'DHL API服务正常' };
+            const testResult = await this.trackShipment('1234567890', projectId);
+            if (testResult.success || testResult.message.includes('未找到')) {
+                return { status: 'ok', message: 'DHL API服务正常' };
+            } else {
+                return { status: 'warning', message: testResult.message };
+            }
         } catch (error) {
-            return { status: 'error', message: 'DHL API服务异常' };
+            return { status: 'error', message: `DHL API服务异常: ${error.message}` };
         }
     }
 }
