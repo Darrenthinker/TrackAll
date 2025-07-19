@@ -86,14 +86,96 @@ app.post('/api/tracking', async (req, res) => {
                         events: shipment.events || []
                     });
                 } else {
-                    results.push({
-                        success: false,
-                        carrier: 'DHL',
-                        trackingNumber: cleanNumber,
-                        message: 'DHL系统中未找到此包裹号'
-                    });
+                    // DHL API响应成功但没有找到数据，尝试17track备选
+                    console.log(`DHL未找到数据，尝试使用17track查询: ${cleanNumber}`);
+                    
+                    try {
+                        const seventeentrackApiKey = process.env.SEVENTEENTRACK_API_KEY;
+                        
+                        // 先注册到17track
+                        const registerResponse = await axios.post('https://api.17track.net/track/v2.2/register', [{
+                            number: cleanNumber,
+                            carrier: 6, // DHL的carrier代码
+                            auto_detection: true
+                        }], {
+                            headers: {
+                                '17token': seventeentrackApiKey,
+                                'Content-Type': 'application/json'
+                            },
+                            timeout: 10000
+                        });
+                        
+                        console.log(`17track注册响应: ${registerResponse.status}`);
+                        
+                        // 等待2秒让系统处理
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        // 查询追踪信息
+                        const trackResponse = await axios.post('https://api.17track.net/track/v2.2/gettrackinfo', [{
+                            number: cleanNumber,
+                            carrier: 6
+                        }], {
+                            headers: {
+                                '17token': seventeentrackApiKey,
+                                'Content-Type': 'application/json'
+                            },
+                            timeout: 10000
+                        });
+                        
+                        console.log(`17track查询响应: ${trackResponse.status}`);
+                        
+                        if (trackResponse.data && trackResponse.data.code === 0 && trackResponse.data.data && trackResponse.data.data.length > 0) {
+                            const trackInfo = trackResponse.data.data[0];
+                            
+                            if (trackInfo && trackInfo.track && trackInfo.track.length > 0) {
+                                console.log(`17track查询成功: ${cleanNumber}`);
+                                
+                                results.push({
+                                    success: true,
+                                    carrier: 'DHL',
+                                    trackingNumber: cleanNumber,
+                                    status: trackInfo.track[0].description || 'In Transit',
+                                    service: '17track数据',
+                                    origin: trackInfo.track[trackInfo.track.length - 1]?.location,
+                                    destination: trackInfo.track[0]?.location,
+                                    events: trackInfo.track.map(event => ({
+                                        timestamp: event.time_iso,
+                                        description: event.description,
+                                        location: { address: { addressLocality: event.location } }
+                                    })),
+                                    source: '17track (备选服务)'
+                                });
+                            } else {
+                                // 17track也没有找到
+                                results.push({
+                                    success: false,
+                                    carrier: 'DHL',
+                                    trackingNumber: cleanNumber,
+                                    message: 'DHL和17track系统中都未找到此包裹号'
+                                });
+                            }
+                        } else {
+                            // 17track查询失败
+                            results.push({
+                                success: false,
+                                carrier: 'DHL',
+                                trackingNumber: cleanNumber,
+                                message: 'DHL系统中未找到此包裹号，17track备选服务也不可用'
+                            });
+                        }
+                        
+                    } catch (seventeentrackError) {
+                        console.log(`17track备选服务失败: ${seventeentrackError.message}`);
+                        
+                        // 17track失败，返回原始DHL未找到错误
+                        results.push({
+                            success: false,
+                            carrier: 'DHL',
+                            trackingNumber: cleanNumber,
+                            message: 'DHL系统中未找到此包裹号'
+                        });
+                    }
                 }
-                
             } catch (dhlError) {
                 console.log(`DHL追踪失败: ${dhlError.response?.status} - ${dhlError.message}`);
                 
