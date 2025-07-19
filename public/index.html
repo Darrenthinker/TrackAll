@@ -3861,19 +3861,44 @@
             try {
                 console.log('queryTracking被调用，输入:', trackingNumbers);
                 
-                const response = await fetch('/api/tracking', {
+                // 确保API路径正确
+                const apiUrl = window.location.hostname === 'localhost' ? 
+                    '/api/tracking' : 
+                    `${window.location.protocol}//${window.location.host}/api/tracking`;
+                
+                console.log('使用API URL:', apiUrl);
+                console.log('当前域名:', window.location.hostname);
+                console.log('当前协议:', window.location.protocol);
+                console.log('当前主机:', window.location.host);
+                
+                const requestData = { 
+                    trackingNumbers: trackingNumbers.filter(n => n.trim()).map(n => n.trim())
+                };
+                console.log('发送请求数据:', JSON.stringify(requestData));
+                
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ 
-                        trackingNumbers: trackingNumbers.filter(n => n.trim()).map(n => n.trim())
-                    })
+                    body: JSON.stringify(requestData)
                 });
 
                 console.log('fetch响应状态:', response.status);
+                console.log('fetch响应OK:', response.ok);
+                console.log('fetch响应headers:', Object.fromEntries(response.headers.entries()));
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP错误: ${response.status} ${response.statusText}`);
+                }
+                
                 const data = await response.json();
                 console.log('fetch响应数据:', data);
+                console.log('data类型:', typeof data);
+                console.log('data.success:', data.success);
+                console.log('data.results存在:', !!data.results);
+                console.log('data.results类型:', typeof data.results);
+                console.log('data.results是数组:', Array.isArray(data.results));
                 
                 const results = data.results || [];
                 console.log('提取的results:', results);
@@ -3883,10 +3908,14 @@
                 
             } catch (error) {
                 console.error('queryTracking内部错误:', error);
+                console.error('错误类型:', error.constructor.name);
+                console.error('错误消息:', error.message);
+                console.error('错误堆栈:', error.stack);
+                
                 return trackingNumbers.map(trackingNumber => ({
                     success: false,
                     trackingNumber: trackingNumber.trim(),
-                    message: '网络错误，请检查连接后重试'
+                    message: `网络错误: ${error.message}`
                 }));
             }
         }
