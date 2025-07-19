@@ -27,23 +27,95 @@ app.get('/api/test', (req, res) => {
 });
 
 // 简单的追踪路由
-app.post('/api/tracking', (req, res) => {
+app.post('/api/tracking', async (req, res) => {
     try {
-        const { trackingNumbers } = req.body;
+        const { trackingNumbers, forcedCarrier } = req.body;
+        
+        if (!trackingNumbers || !Array.isArray(trackingNumbers) || trackingNumbers.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: '请提供有效的追踪单号'
+            });
+        }
+        
+        const results = [];
+        
+        for (const trackingNumber of trackingNumbers) {
+            const cleanNumber = trackingNumber.trim();
+            
+            if (!cleanNumber) {
+                results.push({
+                    success: false,
+                    carrier: 'Unknown',
+                    trackingNumber: cleanNumber,
+                    message: '单号不能为空'
+                });
+                continue;
+            }
+            
+            // 尝试DHL追踪
+            try {
+                console.log(`开始追踪DHL包裹: ${cleanNumber}`);
+                
+                const dhlApiKey = process.env.DHL_API_KEY;
+                const url = `https://api-eu.dhl.com/track/shipments?trackingNumber=${cleanNumber}`;
+                
+                const axios = require('axios');
+                const response = await axios.get(url, {
+                    headers: {
+                        'DHL-API-Key': dhlApiKey,
+                        'Accept': 'application/json',
+                        'User-Agent': 'TrackAll-Production/1.0'
+                    },
+                    timeout: 10000
+                });
+                
+                if (response.data && response.data.shipments && response.data.shipments.length > 0) {
+                    const shipment = response.data.shipments[0];
+                    console.log(`DHL包裹 ${cleanNumber} 追踪成功`);
+                    
+                    results.push({
+                        success: true,
+                        carrier: 'DHL',
+                        trackingNumber: cleanNumber,
+                        status: shipment.status?.description || 'In Transit',
+                        service: shipment.details?.product?.productName || 'DHL Express',
+                        origin: shipment.origin?.address?.addressLocality,
+                        destination: shipment.destination?.address?.addressLocality,
+                        estimatedDelivery: shipment.estimatedTimeOfDelivery,
+                        events: shipment.events || []
+                    });
+                } else {
+                    results.push({
+                        success: false,
+                        carrier: 'DHL',
+                        trackingNumber: cleanNumber,
+                        message: 'DHL系统中未找到此包裹号'
+                    });
+                }
+                
+            } catch (dhlError) {
+                console.log(`DHL追踪失败: ${dhlError.response?.status} - ${dhlError.message}`);
+                
+                // DHL失败后，返回通用错误
+                results.push({
+                    success: false,
+                    carrier: 'DHL',
+                    trackingNumber: cleanNumber,
+                    message: dhlError.response?.status === 404 ? 
+                        'DHL系统中未找到此包裹号' : 
+                        'DHL服务暂时不可用，请稍后重试'
+                });
+            }
+        }
         
         res.json({
             success: true,
-            message: 'Tracking API is working',
-            received: trackingNumbers,
-            results: trackingNumbers.map(num => ({
-                success: true,
-                carrier: 'TEST',
-                trackingNumber: num,
-                status: 'Test Status',
-                message: 'This is a test response'
-            }))
+            results: results
         });
+        
     } catch (error) {
+        console.error('追踪API错误:', error);
         res.status(500).json({
             success: false,
             error: error.message
