@@ -176,9 +176,12 @@ async function trackDHL(trackingNumber) {
 // 17track备选函数
 async function try17track(trackingNumber, originalCarrier) {
     try {
-        console.log(`尝试17track追踪: ${trackingNumber}`);
+        console.log(`===== 开始17track备选追踪: ${trackingNumber} =====`);
         
-        const seventeentrackApiKey = process.env.SEVENTEENTRACK_API_KEY;
+        const seventeentrackApiKey = process.env.SEVENTEENTRACK_API_KEY || 
+                                   '60c5b1e0-0b4a-11ee-8a0b-5f2cc0c56900'; // 备用Key
+        
+        console.log(`使用17track API Key: ${seventeentrackApiKey ? seventeentrackApiKey.substring(0, 8) + '...' : '未设置'}`);
         
         // 确定carrier代码
         let carrierCode = 6; // 默认DHL
@@ -202,6 +205,7 @@ async function try17track(trackingNumber, originalCarrier) {
         console.log(`17track注册响应: ${registerResponse.status} - ${JSON.stringify(registerResponse.data)}`);
         
         // 等待处理
+        console.log('等待17track处理...');
         await new Promise(resolve => setTimeout(resolve, 3000));
         
         // 查询追踪信息
@@ -244,20 +248,32 @@ async function try17track(trackingNumber, originalCarrier) {
         }
         
         // 17track也没找到
+        console.log(`17track未找到数据: ${trackingNumber}`);
         return {
             success: false,
             carrier: originalCarrier,
             trackingNumber: trackingNumber,
-            message: `${originalCarrier}和17track系统中都未找到此包裹号`
+            message: `${originalCarrier}和17track系统中都未找到此包裹号`,
+            source: '17track (备选服务已尝试)'
         };
         
     } catch (error) {
-        console.log(`17track错误: ${error.message}`);
+        console.error(`===== 17track错误详情 =====`);
+        console.error(`单号: ${trackingNumber}`);
+        console.error(`错误类型: ${error.constructor.name}`);
+        console.error(`错误消息: ${error.message}`);
+        if (error.response) {
+            console.error(`响应状态: ${error.response.status}`);
+            console.error(`响应数据: ${JSON.stringify(error.response.data)}`);
+        }
+        console.error(`===== 17track错误结束 =====`);
+        
         return {
             success: false,
             carrier: originalCarrier,
             trackingNumber: trackingNumber,
-            message: `${originalCarrier}系统中未找到此包裹号`
+            message: `${originalCarrier}系统中未找到此包裹号`,
+            source: '17track (备选服务失败)'
         };
     }
 }
