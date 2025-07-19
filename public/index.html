@@ -4894,16 +4894,42 @@
             // 渲染结果列表（不再过滤In Transit，全部显示）
             const html = results.map((data, index) => {
                 if (!data.success) {
+                    // 确定显示的承运商名称和图标
+                    const carrierDisplay = data.carrier || 'Unknown';
+                    const carrierIconClass = getCarrierIconClass(carrierDisplay);
+                    const carrierName = getCarrierDisplayName(carrierDisplay);
+                    
+                    // 确定状态文本和图标
+                    let statusText = '查询不到';
+                    let statusIcon = 'fas fa-exclamation-triangle';
+                    let statusColor = '#ef4444';
+                    
+                    if (data.message) {
+                        if (data.message.includes('暂未开放') || data.message.includes('暂时不可用')) {
+                            statusText = '服务暂未开放';
+                            statusIcon = 'fas fa-clock';
+                            statusColor = '#f59e0b';
+                        } else if (data.message.includes('17track') && data.message.includes('备选')) {
+                            statusText = '已尝试备选服务';
+                            statusIcon = 'fas fa-search';
+                            statusColor = '#6b7280';
+                        } else if (data.message.includes('未找到') || data.message.includes('not found')) {
+                            statusText = '查询不到';
+                            statusIcon = 'fas fa-question-circle';
+                            statusColor = '#ef4444';
+                        }
+                    }
+                    
                     return `
                         <div class="result-item error-item" onclick="toggleDetails(${index})">
                             <div class="result-left">
                                 <div class="status-section">
-                                    <div class="status-icon-pure" style="color: #ef4444">
-                                        <i class="fas fa-exclamation-triangle"></i>
+                                    <div class="status-icon-pure" style="color: ${statusColor}">
+                                        <i class="${statusIcon}"></i>
                                     </div>
                                     <div class="status-text-info">
                                         <div class="status-text-line">
-                                            <div class="status-text">查询不到</div>
+                                            <div class="status-text">${statusText}</div>
                                             <div class="status-time">--</div>
                                         </div>
                                         <div class="tracking-section">
@@ -4914,7 +4940,9 @@
                             </div>
                             <div class="result-middle">
                                 <div class="carrier-info">
-                                    <div class="carrier-name error" onclick="event.stopPropagation(); openCarrierModal('${data.trackingNumber}')">选择服务商</div>
+                                    <div class="carrier-name ${carrierIconClass}" onclick="event.stopPropagation(); openCarrierModal('${data.trackingNumber}')">
+                                        ${carrierName}
+                                    </div>
                                 </div>
                                 <div class="location-info">
                                     <span class="error-message">
@@ -4924,13 +4952,13 @@
                                         <i class="fas fa-bell"></i>
                                     </div>
                                     <div class="delivery-info">
-                                        <!-- 错误状态下不显示预计到达时间和轨迹 -->
+                                        ${data.source ? `<small style="color: #6b7280;">数据源: ${data.source}</small>` : ''}
                                     </div>
                                 </div>
                             </div>
                             <div class="result-right">
                                 <div class="status-info">
-                                    <div class="last-update">请确认单号是否正确</div>
+                                    <div class="last-update">${data.source || '请确认单号是否正确'}</div>
                                 </div>
                             </div>
                         </div>
