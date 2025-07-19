@@ -2,6 +2,10 @@ const express = require('express');
 const axios = require('axios');
 const router = express.Router();
 
+// 导入服务
+const dhlService = require('../services/dhlService');
+const seventeentrackService = require('../services/seventeentrackService');
+
 // 追踪服务类
 class TrackingService {
     constructor() {
@@ -9,7 +13,7 @@ class TrackingService {
             // 快递公司
             'dhl': {
                 name: 'DHL',
-                pattern: /^(\d{10,11}|[A-Z]{3}\d{9})$/,
+                pattern: /^(\d{10,11}|[A-Z]{3}\d{9}|[0-9]{10,12})$/,
                 track: this.trackDHL.bind(this)
             },
             'ups': {
@@ -49,43 +53,57 @@ class TrackingService {
         return null;
     }
 
-    // DHL追踪 (演示版本，实际需要API密钥)
+    // DHL追踪 (使用真实API)
     async trackDHL(trackingNumber) {
         try {
-            // 这里应该调用DHL官方API
-            // const response = await axios.get(`https://api-eu.dhl.com/track/shipments?trackingNumber=${trackingNumber}`, {
-            //     headers: { 'DHL-API-Key': process.env.DHL_API_KEY }
-            // });
+            console.log(`开始追踪DHL包裹: ${trackingNumber}`);
             
-            // 模拟数据
+            // 调用DHL服务
+            const result = await dhlService.trackShipment(trackingNumber);
+            
+            if (!result.found) {
+                return {
+                    success: false,
+                    carrier: 'DHL',
+                    trackingNumber,
+                    message: result.message
+                };
+            }
+            
             return {
                 success: true,
                 carrier: 'DHL',
-                trackingNumber,
-                status: 'In Transit',
-                events: [
-                    {
-                        timestamp: '2024-01-15T10:30:00Z',
-                        location: '北京分拣中心',
-                        description: '包裹已从分拣中心发出',
-                        status: 'In Transit'
-                    },
-                    {
-                        timestamp: '2024-01-14T18:45:00Z',
-                        location: '北京',
-                        description: '包裹已到达当地分拣中心',
-                        status: 'In Transit'
-                    },
-                    {
-                        timestamp: '2024-01-14T09:15:00Z',
-                        location: '上海',
-                        description: '包裹已揽收',
-                        status: 'Picked Up'
-                    }
-                ]
+                trackingNumber: result.trackingNumber,
+                status: result.status,
+                service: result.service,
+                origin: result.origin,
+                destination: result.destination,
+                estimatedDelivery: result.estimatedDelivery,
+                events: result.events
             };
         } catch (error) {
-            throw new Error('DHL追踪服务暂时不可用');
+            console.error('DHL追踪失败:', error);
+            
+            // 如果DHL API失败，尝试使用17track作为备选
+            try {
+                console.log('DHL API失败，尝试使用17track备选服务...');
+                const fallbackResult = await seventeentrackService.trackShipment(trackingNumber, 'dhl');
+                
+                if (fallbackResult.success) {
+                    return {
+                        success: true,
+                        carrier: 'DHL',
+                        trackingNumber,
+                        status: fallbackResult.data.status,
+                        events: fallbackResult.data.events,
+                        source: '17track (备选)'
+                    };
+                }
+            } catch (fallbackError) {
+                console.error('17track备选服务也失败:', fallbackError);
+            }
+            
+            throw new Error(`DHL追踪失败: ${error.message}`);
         }
     }
 

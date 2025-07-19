@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackAll Logo 预览</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 600px;
+        }
+        
+        h1 {
+            color: #4f46e5;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .logo-showcase {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            margin: 40px 0;
+            flex-wrap: wrap;
+        }
+        
+        .logo-item {
+            text-align: center;
+        }
+        
+        .logo-item h3 {
+            color: #6b7280;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+        
+        .logo-container {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 15px;
+            border: 2px solid #e2e8f0;
+            display: inline-block;
+        }
+        
+        .size-16 { width: 16px; height: 16px; }
+        .size-32 { width: 32px; height: 32px; }
+        .size-64 { width: 64px; height: 64px; }
+        .size-128 { width: 128px; height: 128px; }
+        
+        .description {
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+            text-align: left;
+        }
+        
+        .description h3 {
+            color: #4f46e5;
+            margin-bottom: 15px;
+        }
+        
+        .description ul {
+            color: #64748b;
+            line-height: 1.6;
+        }
+        
+        .description li {
+            margin-bottom: 8px;
+        }
+        
+        .color-palette {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .color-item {
+            text-align: center;
+        }
+        
+        .color-box {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border: 3px solid white;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .color-1 { background: #4f46e5; }
+        .color-2 { background: #7c3aed; }
+        .color-3 { background: #10b981; }
+        .color-4 { background: #ffffff; border-color: #e2e8f0; }
+        
+        .color-code {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TrackAll Logo 设计</h1>
+        
+        <div class="logo-showcase">
+            <div class="logo-item">
+                <h3>16x16 (浏览器标签)</h3>
+                <div class="logo-container">
+                    <svg class="size-16" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+                        <defs>
+                            <linearGradient id="bgGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="64" height="64" rx="16" fill="url(#bgGrad1)"/>
+                        <path d="M 16 20 L 48 20 L 48 28 L 36 28 L 36 48 L 28 48 L 28 28 L 16 28 Z" fill="#ffffff" opacity="0.95"/>
+                        <circle cx="44" cy="16" r="4" fill="#10b981"/>
+                        <circle cx="44" cy="16" r="2" fill="#ffffff"/>
+                        <rect x="12" y="52" width="40" height="2" fill="#ffffff" opacity="0.6" rx="1"/>
+                        <rect x="16" y="56" width="32" height="2" fill="#ffffff" opacity="0.4" rx="1"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="logo-item">
+                <h3>32x32 (小图标)</h3>
+                <div class="logo-container">
+                    <svg class="size-32" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+                        <defs>
+                            <linearGradient id="bgGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="64" height="64" rx="16" fill="url(#bgGrad2)"/>
+                        <path d="M 16 20 L 48 20 L 48 28 L 36 28 L 36 48 L 28 48 L 28 28 L 16 28 Z" fill="#ffffff" opacity="0.95"/>
+                        <circle cx="44" cy="16" r="4" fill="#10b981"/>
+                        <circle cx="44" cy="16" r="2" fill="#ffffff"/>
+                        <rect x="12" y="52" width="40" height="2" fill="#ffffff" opacity="0.6" rx="1"/>
+                        <rect x="16" y="56" width="32" height="2" fill="#ffffff" opacity="0.4" rx="1"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="logo-item">
+                <h3>64x64 (标准尺寸)</h3>
+                <div class="logo-container">
+                    <svg class="size-64" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+                        <defs>
+                            <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="64" height="64" rx="16" fill="url(#bgGrad3)"/>
+                        <path d="M 16 20 L 48 20 L 48 28 L 36 28 L 36 48 L 28 48 L 28 28 L 16 28 Z" fill="#ffffff" opacity="0.95"/>
+                        <circle cx="44" cy="16" r="4" fill="#10b981"/>
+                        <circle cx="44" cy="16" r="2" fill="#ffffff"/>
+                        <rect x="12" y="52" width="40" height="2" fill="#ffffff" opacity="0.6" rx="1"/>
+                        <rect x="16" y="56" width="32" height="2" fill="#ffffff" opacity="0.4" rx="1"/>
+                    </svg>
+                </div>
+            </div>
+            
+            <div class="logo-item">
+                <h3>128x128 (高清显示)</h3>
+                <div class="logo-container">
+                    <svg class="size-128" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+                        <defs>
+                            <linearGradient id="bgGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#4f46e5;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#7c3aed;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="64" height="64" rx="16" fill="url(#bgGrad4)"/>
+                        <path d="M 16 20 L 48 20 L 48 28 L 36 28 L 36 48 L 28 48 L 28 28 L 16 28 Z" fill="#ffffff" opacity="0.95"/>
+                        <circle cx="44" cy="16" r="4" fill="#10b981"/>
+                        <circle cx="44" cy="16" r="2" fill="#ffffff"/>
+                        <rect x="12" y="52" width="40" height="2" fill="#ffffff" opacity="0.6" rx="1"/>
+                        <rect x="16" y="56" width="32" height="2" fill="#ffffff" opacity="0.4" rx="1"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="description">
+            <h3>设计特点</h3>
+            <ul>
+                <li><strong>蓝紫色渐变背景</strong> - 现代科技感，从蓝色到紫色的渐变</li>
+                <li><strong>白色T字母</strong> - 代表"TrackAll"，简洁明了</li>
+                <li><strong>绿色定位点</strong> - 象征GPS追踪和物流定位</li>
+                <li><strong>圆角设计</strong> - 友好现代的视觉风格</li>
+                <li><strong>装饰线条</strong> - 暗示追踪路径和物流轨迹</li>
+                <li><strong>矢量格式</strong> - 支持任意尺寸缩放不失真</li>
+            </ul>
+        </div>
+        
+        <div class="color-palette">
+            <div class="color-item">
+                <div class="color-box color-1"></div>
+                <div class="color-code">#4f46e5</div>
+                <div>主蓝色</div>
+            </div>
+            <div class="color-item">
+                <div class="color-box color-2"></div>
+                <div class="color-code">#7c3aed</div>
+                <div>渐变紫色</div>
+            </div>
+            <div class="color-item">
+                <div class="color-box color-3"></div>
+                <div class="color-code">#10b981</div>
+                <div>追踪绿色</div>
+            </div>
+            <div class="color-item">
+                <div class="color-box color-4"></div>
+                <div class="color-code">#ffffff</div>
+                <div>纯白色</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

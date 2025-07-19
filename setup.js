@@ -19,6 +19,8 @@ DHL_API_KEY=
 UPS_CLIENT_ID=
 UPS_CLIENT_SECRET=
 FEDEX_API_KEY=
+FEDEX_SECRET_KEY=
+FEDEX_API_BASE_URL=https://apis.fedex.com
 
 # 邮件服务配置（稍后填写）
 EMAIL_SERVICE=sendgrid

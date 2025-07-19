@@ -3,430 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理后台 - 追踪网站系统</title>
-    
-    <!-- 网站图标 -->
-    <link rel="icon" type="image/svg+xml" href="/logo.svg">
-    <link rel="shortcut icon" type="image/svg+xml" href="/logo.svg">
-    <link rel="apple-touch-icon" href="/logo.svg">
-    
+    <title>多项目管理系统 - 管理后台</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <script>
-        // 简单的身份验证检查
-        function checkAuth() {
-            const isLoggedIn = localStorage.getItem('adminLoggedIn');
-            if (!isLoggedIn || isLoggedIn !== 'true') {
-                window.location.href = '/login.html';
-                return false;
-            }
-            return true;
-        }
-        
-        // 页面加载时检查身份验证
-        if (!checkAuth()) {
-            // 如果没有登录，立即跳转到登录页面
-        }
-        
-        // 退出登录函数
-        function logout() {
-            localStorage.removeItem('adminLoggedIn');
-            localStorage.removeItem('adminUsername');
-            window.location.href = '/login.html';
-        }
-        
-        // 显示用户名
-        function displayUsername() {
-            const username = localStorage.getItem('adminUsername');
-            if (username) {
-                const userElement = document.querySelector('.navbar-nav .nav-link');
-                if (userElement) {
-                    userElement.innerHTML = `<i class="fas fa-user-circle me-2"></i>${username}`;
-                }
-            }
-        }
-        
-        // 页面加载完成后显示用户名
-        document.addEventListener('DOMContentLoaded', function() {
-            displayUsername();
-        });
-    </script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #f8f9fa;
-        }
         .sidebar {
-            height: 100vh;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 1000;
+            min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            overflow-y: auto;
         }
         .sidebar .nav-link {
-            color: rgba(255, 255, 255, 0.8);
-            padding: 15px 20px;
-            margin: 5px 15px;
-            border-radius: 10px;
-            transition: all 0.3s ease;
+            color: rgba(255,255,255,0.8);
+            border-radius: 8px;
+            margin: 2px 0;
         }
         .sidebar .nav-link:hover,
         .sidebar .nav-link.active {
-            background-color: rgba(255, 255, 255, 0.1);
             color: white;
-            transform: translateX(5px);
+            background: rgba(255,255,255,0.1);
         }
         .main-content {
-            margin-left: 280px;
-            padding: 20px;
+            background: #f8f9fa;
         }
         .card {
             border: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            border-radius: 15px;
-            transition: transform 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border-radius: 0.5rem;
         }
         .stats-card {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
         }
-        .stats-card.blue {
-            background: linear-gradient(135deg, #4dabf7 0%, #339af0 100%);
+        .project-card {
+            transition: transform 0.2s;
         }
-        .stats-card.green {
-            background: linear-gradient(135deg, #51cf66 0%, #40c057 100%);
-        }
-        .stats-card.yellow {
-            background: linear-gradient(135deg, #ffd43b 0%, #fab005 100%);
-        }
-        .chart-container {
-            position: relative;
-            height: 300px;
-            margin-top: 20px;
-        }
-        .table-responsive {
-            border-radius: 15px;
-            overflow: hidden;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 10px;
-            padding: 10px 20px;
-            font-weight: 500;
-        }
-        .btn-primary:hover {
+        .project-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-        }
-        .navbar {
-            background: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
         }
         .status-badge {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 500;
+            font-size: 0.75rem;
         }
-        .status-success {
-            background-color: #d4edda;
-            color: #155724;
-        }
-        .status-warning {
-            background-color: #fff3cd;
-            color: #856404;
-        }
-        .status-danger {
-            background-color: #f8d7da;
-            color: #721c24;
-        }
-        .content-section {
-            display: none;
-        }
-        .content-section.active {
-            display: block;
-        }
-        .loading {
-            text-align: center;
-            padding: 50px;
+        .table th {
+            border-top: none;
+            font-weight: 600;
             color: #6c757d;
         }
-        .metric-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .metric-value {
-            font-size: 2.5em;
-            font-weight: bold;
-            color: #667eea;
-        }
-        .metric-label {
-            color: #6c757d;
-            font-size: 0.9em;
-            margin-top: 10px;
-        }
-        .quick-actions {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .action-btn {
-            display: inline-block;
-            padding: 12px 20px;
-            margin: 5px;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #495057;
-            transition: all 0.3s ease;
-        }
-        .action-btn:hover {
-            background: #e9ecef;
-            transform: translateY(-2px);
-            color: #495057;
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
         }
     </style>
 </head>
 <body>
+    <div class="container-fluid">
+        <div class="row">
         <!-- 侧边栏 -->
-    <nav class="sidebar">
-        <div class="p-3">
-            <h4 class="text-white mb-4">
-                <i class="fas fa-shipping-fast me-2"></i>
-                追踪系统管理
-            </h4>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link active" href="#dashboard" data-section="dashboard">
-                        <i class="fas fa-tachometer-alt me-2"></i>
-                        仪表板
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#users" data-section="users">
-                        <i class="fas fa-users me-2"></i>
-                        用户管理
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#queries" data-section="queries">
-                        <i class="fas fa-search me-2"></i>
-                        查询记录
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#notifications" data-section="notifications">
-                        <i class="fas fa-bell me-2"></i>
-                        通知管理
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#packages" data-section="packages">
-                        <i class="fas fa-box me-2"></i>
-                        包裹管理
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#analytics" data-section="analytics">
-                        <i class="fas fa-chart-line me-2"></i>
-                        数据分析
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#financial" data-section="financial">
-                        <i class="fas fa-dollar-sign me-2"></i>
-                        财务统计
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#settings" data-section="settings">
-                        <i class="fas fa-cog me-2"></i>
-                        系统设置
-                    </a>
-                </li>
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <div class="text-center mb-4">
+                        <h5 class="text-white">多项目管理系统</h5>
+                        <small class="text-white-50">TrackAll Admin</small>
+            </div>
+                    
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" onclick="showDashboard()">
+                                <i class="bi bi-speedometer2"></i> 仪表盘
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showProjects()">
+                                <i class="bi bi-folder"></i> 项目管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showUsers()">
+                                <i class="bi bi-people"></i> 用户管理
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showSettings()">
+                                <i class="bi bi-gear"></i> 系统设置
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showLogs()">
+                                <i class="bi bi-journal-text"></i> 操作日志
+                            </a>
+                        </li>
+                        <li class="nav-item mt-3">
+                            <a class="nav-link" href="#" onclick="logout()">
+                                <i class="bi bi-box-arrow-right"></i> 退出登录
+                            </a>
+                        </li>
             </ul>
         </div>
-    </nav>
+            </nav>
 
-    <!-- 主要内容区域 -->
-        <div class="main-content">
-        <!-- 顶部导航 -->
-        <nav class="navbar navbar-expand-lg navbar-light">
-            <div class="container-fluid">
-                <span class="navbar-brand mb-0 h1">管理后台</span>
-                <div class="navbar-nav ms-auto">
-                    <div class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle me-2"></i>管理员
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="#profile"><i class="fas fa-user me-2"></i>个人资料</a></li>
-                            <li><a class="dropdown-item" href="#" onclick="logout()"><i class="fas fa-sign-out-alt me-2"></i>退出登录</a></li>
-                        </ul>
+        <!-- 主内容区 -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- 顶部导航 -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2" id="page-title">仪表盘</h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                                <i class="bi bi-arrow-clockwise"></i> 刷新
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </nav>
 
-        <!-- 仪表板 -->
-        <div id="dashboard" class="content-section active">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>系统概览</h2>
-                <button class="btn btn-primary" onclick="refreshDashboard()">
-                    <i class="fas fa-sync-alt me-2"></i>刷新数据
-                </button>
+                <!-- 仪表盘 -->
+                <div id="dashboard-content">
+                    <div class="row mb-4">
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stats-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-uppercase mb-1">总项目数</div>
+                                            <div class="h5 mb-0 font-weight-bold" id="total-projects">0</div>
+                            </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-folder fs-2"></i>
+                        </div>
+                    </div>
+                            </div>
+                        </div>
+                    </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stats-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-uppercase mb-1">总用户数</div>
+                                            <div class="h5 mb-0 font-weight-bold" id="total-users">0</div>
+                            </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-people fs-2"></i>
+                        </div>
+                    </div>
+                            </div>
+                        </div>
+                    </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stats-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-uppercase mb-1">今日查询</div>
+                                            <div class="h5 mb-0 font-weight-bold" id="today-queries">0</div>
                 </div>
-
-                <!-- 统计卡片 -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card stats-card">
-                        <div class="card-body text-center">
-                            <i class="fas fa-users fa-3x mb-3"></i>
-                            <h3 id="total-users">-</h3>
-                            <p>总用户数</p>
-                        </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-search fs-2"></i>
                     </div>
-                            </div>
-                <div class="col-md-3">
-                    <div class="card stats-card blue">
-                        <div class="card-body text-center">
-                            <i class="fas fa-search fa-3x mb-3"></i>
-                            <h3 id="total-queries">-</h3>
-                            <p>总查询次数</p>
-                        </div>
-                    </div>
-                            </div>
-                <div class="col-md-3">
-                    <div class="card stats-card green">
-                        <div class="card-body text-center">
-                            <i class="fas fa-check-circle fa-3x mb-3"></i>
-                            <h3 id="successful-queries">-</h3>
-                            <p>成功查询</p>
-                        </div>
-                    </div>
-                            </div>
-                <div class="col-md-3">
-                    <div class="card stats-card yellow">
-                        <div class="card-body text-center">
-                            <i class="fas fa-clock fa-3x mb-3"></i>
-                            <h3 id="avg-response-time">-</h3>
-                            <p>平均响应时间</p>
                         </div>
                     </div>
                 </div>
             </div>
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card stats-card">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-uppercase mb-1">活跃项目</div>
+                                            <div class="h5 mb-0 font-weight-bold" id="active-projects">0</div>
+                </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-check-circle fs-2"></i>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            </div>
+                </div>
 
-            <!-- 快速操作 -->
-            <div class="quick-actions">
-                <h5 class="mb-3">快速操作</h5>
-                <a href="#" class="action-btn" onclick="showSection('users')">
-                    <i class="fas fa-user-plus me-2"></i>添加用户
-                </a>
-                <a href="#" class="action-btn" onclick="exportData()">
-                    <i class="fas fa-download me-2"></i>导出数据
-                </a>
-                <a href="#" class="action-btn" onclick="viewLogs()">
-                    <i class="fas fa-file-alt me-2"></i>查看日志
-                </a>
-                <a href="#" class="action-btn" onclick="systemMaintenance()">
-                    <i class="fas fa-tools me-2"></i>系统维护
-                </a>
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">项目列表</h5>
+                        </div>
+                                <div class="card-body">
+                                    <div id="projects-list"></div>
+                    </div>
+                    </div>
+                </div>
+                        <div class="col-lg-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">最近活动</h5>
+            </div>
+                                <div class="card-body">
+                                    <div id="recent-activities"></div>
+                </div>
+                            </div>
+                        </div>
+                        </div>
                     </div>
 
-            <!-- 最近查询 -->
-            <div class="row">
-                <div class="col-md-8">
+                <!-- 项目管理 -->
+                <div id="projects-content" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>项目管理</h4>
+                        <button class="btn btn-primary" onclick="showCreateProjectModal()">
+                            <i class="bi bi-plus"></i> 新建项目
+                        </button>
+                    </div>
                     <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">最近查询记录</h5>
-                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>时间</th>
-                                            <th>快递单号</th>
-                                            <th>快递公司</th>
-                                            <th>状态</th>
-                                            <th>响应时间</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="recent-queries">
-                                        <tr>
-                                            <td colspan="5" class="text-center">
-                                                <div class="loading">
-                                                    <i class="fas fa-spinner fa-spin"></i>
-                                                    加载中...
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="mb-0">快递公司统计</h5>
-                    </div>
-                        <div class="card-body">
-                            <canvas id="carrierChart"></canvas>
-                        </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 用户管理 -->
-        <div id="users" class="content-section">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>用户管理</h2>
-                <button class="btn btn-primary" onclick="addUser()">
-                    <i class="fas fa-plus me-2"></i>添加用户
-                            </button>
-                    </div>
-
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>ID</th>
-                                    <th>邮箱</th>
-                                    <th>用户类型</th>
+                                            <th>项目名称</th>
+                                            <th>标识符</th>
+                                            <th>域名</th>
+                                            <th>端口</th>
                                     <th>状态</th>
-                                    <th>注册时间</th>
-                                    <th>最后登录</th>
+                                            <th>创建时间</th>
                                     <th>操作</th>
                                 </tr>
                             </thead>
-                            <tbody id="users-table">
-                                <tr>
-                                    <td colspan="7" class="text-center">
-                                        <div class="loading">
-                                            <i class="fas fa-spinner fa-spin"></i>
-                                            加载中...
-                                        </div>
-                                    </td>
-                                </tr>
+                                    <tbody id="projects-table">
                             </tbody>
                         </table>
                     </div>
@@ -434,714 +233,719 @@
             </div>
                 </div>
 
-        <!-- 查询记录 -->
-        <div id="queries" class="content-section">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>查询记录</h2>
-                <div>
-                    <button class="btn btn-outline-primary me-2" onclick="exportQueries()">
-                        <i class="fas fa-download me-2"></i>导出记录
+                <!-- 用户管理 -->
+                <div id="users-content" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4>用户管理</h4>
+                        <button class="btn btn-primary" onclick="showCreateUserModal()">
+                            <i class="bi bi-plus"></i> 新建用户
                             </button>
-                    <button class="btn btn-primary" onclick="refreshQueries()">
-                        <i class="fas fa-sync-alt me-2"></i>刷新
-                            </button>
+                        </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                            <th>邮箱</th>
+                                            <th>用户类型</th>
+                                    <th>状态</th>
+                                            <th>最后登录</th>
+                                            <th>注册时间</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                                    <tbody id="users-table">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+                </div>
+
+                <!-- 系统设置 -->
+                <div id="settings-content" style="display: none;">
+                    <h4>系统设置</h4>
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">全局配置</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="global-settings-form">
+                                        <div class="mb-3">
+                                            <label class="form-label">系统名称</label>
+                                            <input type="text" class="form-control" id="system-name" name="system_name">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">管理员邮箱</label>
+                                            <input type="email" class="form-control" id="admin-email" name="admin_email">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">每个用户最大项目数</label>
+                                            <input type="number" class="form-control" id="max-projects" name="max_projects_per_user">
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">保存设置</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">API配置</h5>
+                                </div>
+                                <div class="card-body">
+                                    <form id="api-settings-form">
+                                        <div class="mb-3">
+                                            <label class="form-label">17track API Key</label>
+                                            <input type="text" class="form-control" id="seventeentrack-api" name="seventeentrack_api_key">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">邮件服务</label>
+                                            <select class="form-select" id="email-service" name="email_service">
+                                                <option value="sendgrid">SendGrid</option>
+                                                <option value="smtp">SMTP</option>
+                                            </select>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">保存配置</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                         </div>
                     </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover">
+                <!-- 操作日志 -->
+                <div id="logs-content" style="display: none;">
+                    <h4>操作日志</h4>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
                             <thead>
                                 <tr>
                                     <th>时间</th>
-                                    <th>用户</th>
-                                    <th>快递单号</th>
-                                    <th>快递公司</th>
-                                    <th>查询结果</th>
-                                    <th>响应时间</th>
-                                    <th>IP地址</th>
+                                            <th>管理员</th>
+                                            <th>操作</th>
+                                            <th>对象类型</th>
+                                            <th>对象ID</th>
+                                            <th>IP地址</th>
                                 </tr>
                             </thead>
-                            <tbody id="queries-table">
-                                <tr>
-                                    <td colspan="7" class="text-center">
-                                        <div class="loading">
-                                            <i class="fas fa-spinner fa-spin"></i>
-                                            加载中...
-                    </div>
-                                    </td>
-                                </tr>
+                                    <tbody id="logs-table">
                             </tbody>
                         </table>
                     </div>
-                    </div>
                 </div>
             </div>
+                </div>
+            </main>
+        </div>
+                </div>
 
-        <!-- 其他sections... -->
-        <div id="notifications" class="content-section">
-            <h2>通知管理</h2>
-            
-            <!-- 统计卡片 -->
-            <div class="row mb-4">
-                <div class="col-md-3">
-                    <div class="card stats-card">
-                        <div class="card-body text-white">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>总通知数</h6>
-                                    <h3 id="totalNotifications">-</h3>
-                                </div>
-                                <i class="fas fa-bell fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
+    <!-- 新建项目模态框 -->
+    <div class="modal fade" id="createProjectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新建项目</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="col-md-3">
-                    <div class="card" style="background: linear-gradient(135deg, #20bf6b 0%, #01a3a4 100%);">
-                        <div class="card-body text-white">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>待发送</h6>
-                                    <h3 id="pendingNotifications">-</h3>
-                                </div>
-                                <i class="fas fa-clock fa-2x"></i>
-                            </div>
+                <div class="modal-body">
+                    <form id="create-project-form">
+                        <div class="mb-3">
+                            <label class="form-label">项目名称</label>
+                            <input type="text" class="form-control" name="name" required>
                         </div>
-                    </div>
+                        <div class="mb-3">
+                            <label class="form-label">项目标识符</label>
+                            <input type="text" class="form-control" name="slug" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">项目描述</label>
+                            <textarea class="form-control" name="description" rows="3"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">域名</label>
+                            <input type="text" class="form-control" name="domain">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">端口号</label>
+                            <input type="number" class="form-control" name="port">
+                        </div>
+                    </form>
                 </div>
-                <div class="col-md-3">
-                    <div class="card" style="background: linear-gradient(135deg, #3742fa 0%, #2f3542 100%);">
-                        <div class="card-body text-white">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>今日新增</h6>
-                                    <h3 id="todayNotifications">-</h3>
-                                </div>
-                                <i class="fas fa-plus fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card" style="background: linear-gradient(135deg, #ffa726 0%, #ff7043 100%);">
-                        <div class="card-body text-white">
-                            <div class="d-flex justify-content-between">
-                                <div>
-                                    <h6>活跃用户</h6>
-                                    <h3 id="activeUsers">-</h3>
-                                </div>
-                                <i class="fas fa-users fa-2x"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 搜索和筛选 -->
-            <div class="card mb-4">
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <input type="text" class="form-control" id="searchEmail" placeholder="搜索邮箱">
-                        </div>
-                        <div class="col-md-3">
-                            <input type="text" class="form-control" id="searchTrackingNumber" placeholder="搜索单号">
-                        </div>
-                        <div class="col-md-2">
-                            <select class="form-control" id="filterStatus">
-                                <option value="">所有状态</option>
-                                <option value="pending">待发送</option>
-                                <option value="sent">已发送</option>
-                                <option value="failed">发送失败</option>
-                                <option value="cancelled">已取消</option>
-                            </select>
-                        </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-primary" onclick="searchNotifications()">
-                                <i class="fas fa-search"></i> 搜索
-                            </button>
-                        </div>
-                        <div class="col-md-2">
-                            <button class="btn btn-success" onclick="refreshNotifications()">
-                                <i class="fas fa-refresh"></i> 刷新
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 通知列表 -->
-            <div class="card">
-                <div class="card-header">
-                    <h5>通知列表</h5>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>邮箱</th>
-                                    <th>单号</th>
-                                    <th>通知类型</th>
-                                    <th>状态</th>
-                                    <th>创建时间</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody id="notificationsList">
-                                <tr>
-                                    <td colspan="7" class="text-center">加载中...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    
-                    <!-- 分页 -->
-                    <nav>
-                        <ul class="pagination justify-content-center" id="notificationsPagination">
-                        </ul>
-                    </nav>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createProject()">创建项目</button>
                 </div>
             </div>
         </div>
-
-        <div id="packages" class="content-section">
-            <h2>包裹管理</h2>
-            <div class="card">
-                <div class="card-body">
-                    <p>包裹管理功能正在开发中...</p>
                     </div>
-                </div>
-            </div>
 
-        <div id="analytics" class="content-section">
-            <h2>数据分析</h2>
-            <div class="card">
-                <div class="card-body">
-                    <p>数据分析功能正在开发中...</p>
-                </div>
+    <!-- 新建用户模态框 -->
+    <div class="modal fade" id="createUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">新建用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
-                    </div>
-
-        <div id="financial" class="content-section">
-            <h2>财务统计</h2>
-            <div class="card">
-                <div class="card-body">
-                    <p>财务统计功能正在开发中...</p>
+                <div class="modal-body">
+                    <form id="create-user-form">
+                        <div class="mb-3">
+                            <label class="form-label">邮箱</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">密码</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">用户类型</label>
+                            <select class="form-select" name="user_type">
+                                <option value="regular">普通用户</option>
+                                <option value="vip">VIP用户</option>
+                                <option value="admin">管理员</option>
+                                <option value="super_admin">超级管理员</option>
+                            </select>
+                        </div>
+                    </form>
                 </div>
-            </div>
-                </div>
-
-        <div id="settings" class="content-section">
-            <h2>系统设置</h2>
-            <div class="card">
-                <div class="card-body">
-                    <p>系统设置功能正在开发中...</p>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="createUser()">创建用户</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // 导航处理
-        document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                
-                // 移除所有活跃状态
-                document.querySelectorAll('.sidebar .nav-link').forEach(l => l.classList.remove('active'));
-                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-                
-                // 添加活跃状态
-                this.classList.add('active');
-                const sectionId = this.getAttribute('data-section');
-                document.getElementById(sectionId).classList.add('active');
-                
-                // 加载相应数据
-                loadSectionData(sectionId);
-            });
-        });
-
-        // 加载section数据
-        function loadSectionData(sectionId) {
-            switch(sectionId) {
-                case 'dashboard':
-                    loadDashboardData();
-                    break;
-                case 'users':
-                    loadUsersData();
-                    break;
-                case 'queries':
-                    loadQueriesData();
-                    break;
-                case 'notifications':
-                    loadNotificationStats();
-                    loadNotifications();
-                    break;
-                default:
-                    console.log('Loading', sectionId);
-            }
-        }
-
-        // 仪表板数据 - 使用模拟数据
-        function loadDashboardData() {
-            // 模拟数据
-            const mockData = {
-                userCount: 3,
-                queryCount: 7,
-                successCount: 6,
-                avgResponseTime: 1454
-            };
-            
-            document.getElementById('total-users').textContent = mockData.userCount;
-            document.getElementById('total-queries').textContent = mockData.queryCount;
-            document.getElementById('successful-queries').textContent = mockData.successCount;
-            document.getElementById('avg-response-time').textContent = mockData.avgResponseTime + 'ms';
-            
-            // 加载最近查询记录
-            loadRecentQueries();
-        }
-
-        // 加载最近查询记录 - 使用模拟数据
-        function loadRecentQueries() {
-            const mockQueries = [
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    tracking_number: '3341712570',
-                    carrier: 'DHL',
-                    query_result: 'success',
-                    response_time: 1200
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    tracking_number: '4632208792',
-                    carrier: 'DHL',
-                    query_result: 'success',
-                    response_time: 980
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    tracking_number: '1234567890',
-                    carrier: 'UPS',
-                    query_result: 'success',
-                    response_time: 1500
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    tracking_number: '882723210064',
-                    carrier: 'FEDEX',
-                    query_result: 'success',
-                    response_time: 800
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    tracking_number: '9876543210',
-                    carrier: 'DHL',
-                    query_result: 'failed',
-                    response_time: 3000
-                }
-            ];
-            
-            const tbody = document.getElementById('recent-queries');
-            tbody.innerHTML = mockQueries.map(query => `
-                <tr>
-                    <td>${query.created_at}</td>
-                    <td>${query.tracking_number}</td>
-                    <td>${query.carrier}</td>
-                    <td><span class="status-badge status-${query.query_result === 'success' ? 'success' : 'danger'}">${query.query_result}</span></td>
-                    <td>${query.response_time}ms</td>
-                </tr>
-            `).join('');
-        }
-
-        // 用户数据 - 使用模拟数据
-        function loadUsersData() {
-            const mockUsers = [
-                {
-                    id: 1,
-                    email: 'test@example.com',
-                    user_type: 'regular',
-                    status: 'active',
-                    created_at: '2025/1/13 10:30:00',
-                    last_login: '2025/1/13 15:20:00'
-                },
-                {
-                    id: 2,
-                    email: 'user2@example.com',
-                    user_type: 'regular',
-                    status: 'active',
-                    created_at: '2025/1/12 14:15:00',
-                    last_login: null
-                },
-                {
-                    id: 3,
-                    email: '837323977@qq.com',
-                    user_type: 'regular',
-                    status: 'active',
-                    created_at: '2025/1/13 16:25:00',
-                    last_login: '2025/1/13 16:30:00'
-                }
-            ];
-            
-            const tbody = document.getElementById('users-table');
-            tbody.innerHTML = mockUsers.map(user => `
-                <tr>
-                    <td>${user.id}</td>
-                    <td>${user.email}</td>
-                    <td>${user.user_type}</td>
-                    <td><span class="status-badge status-${user.status === 'active' ? 'success' : 'warning'}">${user.status}</span></td>
-                    <td>${user.created_at}</td>
-                    <td>${user.last_login || '从未登录'}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="editUser(${user.id})">编辑</button>
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(${user.id})">删除</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // 查询数据 - 使用模拟数据
-        function loadQueriesData() {
-            const mockQueries = [
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    user_email: '837323977@qq.com',
-                    tracking_number: '3341712570',
-                    carrier: 'DHL',
-                    status: 'success',
-                    response_time: 1200,
-                    ip_address: '192.168.1.1'
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    user_email: '837323977@qq.com',
-                    tracking_number: '4632208792',
-                    carrier: 'DHL',
-                    status: 'success',
-                    response_time: 980,
-                    ip_address: '192.168.1.1'
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    user_email: '匿名用户',
-                    tracking_number: '1234567890',
-                    carrier: 'UPS',
-                    status: 'success',
-                    response_time: 1500,
-                    ip_address: '192.168.1.2'
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    user_email: '匿名用户',
-                    tracking_number: '882723210064',
-                    carrier: 'FEDEX',
-                    status: 'success',
-                    response_time: 800,
-                    ip_address: '192.168.1.3'
-                },
-                {
-                    created_at: '2025/1/13 22:59:34',
-                    user_email: '匿名用户',
-                    tracking_number: '9876543210',
-                    carrier: 'DHL',
-                    status: 'failed',
-                    response_time: 3000,
-                    ip_address: '192.168.1.4'
-                }
-            ];
-            
-            const tbody = document.getElementById('queries-table');
-            tbody.innerHTML = mockQueries.map(query => `
-                <tr>
-                    <td>${query.created_at}</td>
-                    <td>${query.user_email}</td>
-                    <td>${query.tracking_number}</td>
-                    <td>${query.carrier}</td>
-                    <td><span class="status-badge status-${query.status === 'success' ? 'success' : 'danger'}">${query.status}</span></td>
-                    <td>${query.response_time}ms</td>
-                    <td>${query.ip_address}</td>
-                </tr>
-            `).join('');
-        }
-
-        // 工具函数
-        function showSection(sectionId) {
-            const link = document.querySelector(`[data-section="${sectionId}"]`);
-            if (link) {
-                link.click();
-            }
-        }
-
-        function refreshDashboard() {
-            loadDashboardData();
-        }
-
-        function addUser() {
-            alert('添加用户功能正在开发中...');
-        }
-
-        function editUser(id) {
-            alert(`编辑用户 ${id} 功能正在开发中...`);
-        }
-
-        function deleteUser(id) {
-            if (confirm('确定要删除这个用户吗？')) {
-                alert(`删除用户 ${id} 功能正在开发中...`);
-            }
-        }
-
-        function exportData() {
-            alert('导出数据功能正在开发中...');
-        }
-
-        function exportQueries() {
-            alert('导出查询记录功能正在开发中...');
-        }
-
-        function refreshQueries() {
-            loadQueriesData();
-        }
-
-        function viewLogs() {
-            alert('查看日志功能正在开发中...');
-        }
-
-        function systemMaintenance() {
-            alert('系统维护功能正在开发中...');
-        }
-
-        // 通知管理功能
-        let currentPage = 1;
-        let currentPageSize = 20;
-
-        // 加载通知统计
-        function loadNotificationStats() {
-            fetch('/api/notifications/admin/stats')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const stats = data.data;
-                        
-                        // 计算总数
-                        const total = stats.statusStats.reduce((sum, item) => sum + item.count, 0);
-                        document.getElementById('totalNotifications').textContent = total;
-                        
-                        // 待发送数量
-                        const pending = stats.statusStats.find(item => item.status === 'pending');
-                        document.getElementById('pendingNotifications').textContent = pending ? pending.count : 0;
-                        
-                        // 今日新增
-                        document.getElementById('todayNotifications').textContent = stats.todayCount;
-                        
-                        // 活跃用户
-                        document.getElementById('activeUsers').textContent = stats.activeUsers;
-                    }
-                })
-                .catch(error => {
-                    console.error('加载通知统计失败:', error);
-                });
-        }
-
-        // 加载通知列表
-        function loadNotifications(page = 1, pageSize = 20) {
-            const email = document.getElementById('searchEmail').value;
-            const trackingNumber = document.getElementById('searchTrackingNumber').value;
-            const status = document.getElementById('filterStatus').value;
-            
-            const params = new URLSearchParams({
-                page: page,
-                pageSize: pageSize
-            });
-            
-            if (email) params.append('email', email);
-            if (trackingNumber) params.append('trackingNumber', trackingNumber);
-            if (status) params.append('status', status);
-            
-            fetch(`/api/notifications/admin/list?${params}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        renderNotificationsList(data.data.notifications);
-                        renderPagination(data.data);
-                    }
-                })
-                .catch(error => {
-                    console.error('加载通知列表失败:', error);
-                    document.getElementById('notificationsList').innerHTML = 
-                        '<tr><td colspan="7" class="text-center text-danger">加载失败</td></tr>';
-                });
-        }
-
-        // 渲染通知列表
-        function renderNotificationsList(notifications) {
-            const tbody = document.getElementById('notificationsList');
-            
-            if (notifications.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center">暂无通知记录</td></tr>';
-                return;
-            }
-            
-            tbody.innerHTML = notifications.map(notification => `
-                <tr>
-                    <td>${notification.id}</td>
-                    <td>${notification.email}</td>
-                    <td>${notification.tracking_number}</td>
-                    <td>
-                        <span class="badge badge-info">${getNotificationTypeText(notification.notification_type)}</span>
-                    </td>
-                    <td>
-                        <span class="badge ${getStatusBadgeClass(notification.status)}">${getStatusText(notification.status)}</span>
-                    </td>
-                    <td>${new Date(notification.created_at).toLocaleString()}</td>
-                    <td>
-                        <div class="btn-group btn-group-sm">
-                            <select class="form-control form-control-sm" onchange="updateNotificationStatus(${notification.id}, this.value)">
-                                <option value="pending" ${notification.status === 'pending' ? 'selected' : ''}>待发送</option>
-                                <option value="sent" ${notification.status === 'sent' ? 'selected' : ''}>已发送</option>
-                                <option value="failed" ${notification.status === 'failed' ? 'selected' : ''}>发送失败</option>
-                                <option value="cancelled" ${notification.status === 'cancelled' ? 'selected' : ''}>已取消</option>
-                            </select>
-                            <button class="btn btn-danger btn-sm ml-1" onclick="deleteNotification(${notification.id})">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // 渲染分页
-        function renderPagination(data) {
-            const pagination = document.getElementById('notificationsPagination');
-            const { page, totalPages } = data;
-            
-            let html = '';
-            
-            // 上一页
-            if (page > 1) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadNotifications(${page - 1}, ${currentPageSize})">上一页</a></li>`;
-            }
-            
-            // 页码
-            for (let i = Math.max(1, page - 2); i <= Math.min(totalPages, page + 2); i++) {
-                html += `<li class="page-item ${i === page ? 'active' : ''}">
-                    <a class="page-link" href="#" onclick="loadNotifications(${i}, ${currentPageSize})">${i}</a>
-                </li>`;
-            }
-            
-            // 下一页
-            if (page < totalPages) {
-                html += `<li class="page-item"><a class="page-link" href="#" onclick="loadNotifications(${page + 1}, ${currentPageSize})">下一页</a></li>`;
-            }
-            
-            pagination.innerHTML = html;
-        }
-
-        // 获取通知类型文本
-        function getNotificationTypeText(type) {
-            const typeMap = {
-                'pickup': '包裹收件',
-                'transit': '运输途中',
-                'customs': '清关状态',
-                'delivery': '末端配送',
-                'delivered': '投递完成',
-                'exception': '异常状态'
-            };
-            return typeMap[type] || type;
-        }
-
-        // 获取状态文本
-        function getStatusText(status) {
-            const statusMap = {
-                'pending': '待发送',
-                'sent': '已发送',
-                'failed': '发送失败',
-                'cancelled': '已取消'
-            };
-            return statusMap[status] || status;
-        }
-
-        // 获取状态徽章样式
-        function getStatusBadgeClass(status) {
-            const classMap = {
-                'pending': 'badge-warning',
-                'sent': 'badge-success',
-                'failed': 'badge-danger',
-                'cancelled': 'badge-secondary'
-            };
-            return classMap[status] || 'badge-secondary';
-        }
-
-        // 搜索通知
-        function searchNotifications() {
-            currentPage = 1;
-            loadNotifications(currentPage, currentPageSize);
-        }
-
-        // 刷新通知
-        function refreshNotifications() {
-            loadNotificationStats();
-            loadNotifications(currentPage, currentPageSize);
-        }
-
-        // 更新通知状态
-        function updateNotificationStatus(id, status) {
-            fetch(`/api/notifications/admin/${id}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('状态更新成功');
-                    refreshNotifications();
-                } else {
-                    alert('状态更新失败: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('更新状态失败:', error);
-                alert('更新状态失败');
-            });
-        }
-
-        // 删除通知
-        function deleteNotification(id) {
-            if (!confirm('确定要删除这个通知吗？')) {
-                return;
-            }
-            
-            fetch(`/api/notifications/admin/${id}`, {
-                method: 'DELETE'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('删除成功');
-                    refreshNotifications();
-                } else {
-                    alert('删除失败: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('删除失败:', error);
-                alert('删除失败');
-            });
-        }
+        // 全局变量
+        let currentUser = null;
+        let projects = [];
+        let users = [];
 
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', function() {
-            loadDashboardData();
+            checkAuth();
+            loadDashboard();
         });
+
+        // 检查认证状态
+        function checkAuth() {
+            const token = localStorage.getItem('admin_token');
+            if (!token) {
+                window.location.href = '/login.html';
+                return;
+            }
+            
+            // 验证token有效性
+            fetch('/api/admin/verify', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Token invalid');
+                }
+                return response.json();
+            })
+            .then(data => {
+                currentUser = data.user;
+            })
+            .catch(error => {
+                console.error('Auth error:', error);
+                localStorage.removeItem('admin_token');
+                window.location.href = '/login.html';
+            });
+        }
+
+        // 显示仪表盘
+        function showDashboard() {
+            document.getElementById('page-title').textContent = '仪表盘';
+            hideAllContent();
+            document.getElementById('dashboard-content').style.display = 'block';
+            updateActiveNav('dashboard');
+            loadDashboard();
+        }
+
+        // 显示项目管理
+        function showProjects() {
+            document.getElementById('page-title').textContent = '项目管理';
+            hideAllContent();
+            document.getElementById('projects-content').style.display = 'block';
+            updateActiveNav('projects');
+            loadProjects();
+        }
+
+        // 显示用户管理
+        function showUsers() {
+            document.getElementById('page-title').textContent = '用户管理';
+            hideAllContent();
+            document.getElementById('users-content').style.display = 'block';
+            updateActiveNav('users');
+            loadUsers();
+        }
+
+        // 显示系统设置
+        function showSettings() {
+            document.getElementById('page-title').textContent = '系统设置';
+            hideAllContent();
+            document.getElementById('settings-content').style.display = 'block';
+            updateActiveNav('settings');
+            loadSettings();
+        }
+
+        // 显示操作日志
+        function showLogs() {
+            document.getElementById('page-title').textContent = '操作日志';
+            hideAllContent();
+            document.getElementById('logs-content').style.display = 'block';
+            updateActiveNav('logs');
+            loadLogs();
+        }
+
+        // 隐藏所有内容
+        function hideAllContent() {
+            const contents = ['dashboard-content', 'projects-content', 'users-content', 'settings-content', 'logs-content'];
+            contents.forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+        }
+
+        // 更新导航激活状态
+        function updateActiveNav(active) {
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        // 加载仪表盘数据
+        function loadDashboard() {
+            const token = localStorage.getItem('admin_token');
+            
+            // 加载统计数据
+            fetch('/api/admin/stats', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-projects').textContent = data.totalProjects;
+                document.getElementById('total-users').textContent = data.totalUsers;
+                document.getElementById('today-queries').textContent = data.todayQueries;
+                document.getElementById('active-projects').textContent = data.activeProjects;
+            });
+
+            // 加载项目列表
+            loadProjectsList();
+            
+            // 加载最近活动
+            loadRecentActivities();
+        }
+
+        // 加载项目列表（仪表盘用）
+        function loadProjectsList() {
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/projects', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                projects = data.projects;
+                const container = document.getElementById('projects-list');
+                container.innerHTML = '';
+                
+                data.projects.forEach(project => {
+                    const card = document.createElement('div');
+                    card.className = 'card project-card mb-3';
+                    card.innerHTML = `
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="card-title mb-1">${project.name}</h6>
+                                    <p class="card-text text-muted small mb-0">${project.description || '暂无描述'}</p>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-${project.status === 'active' ? 'success' : 'secondary'} status-badge">${project.status}</span>
+                                    <div class="small text-muted">端口: ${project.port || 'N/A'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            });
+        }
+
+        // 加载最近活动
+        function loadRecentActivities() {
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/recent-activities', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('recent-activities');
+                container.innerHTML = '';
+                
+                data.activities.forEach(activity => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex align-items-center mb-3';
+                    item.innerHTML = `
+                        <div class="flex-shrink-0">
+                            <i class="bi bi-circle-fill text-primary" style="font-size: 0.5rem;"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="small">${activity.description}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">${new Date(activity.created_at).toLocaleString()}</div>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            });
+        }
+
+        // 加载项目管理数据
+        function loadProjects() {
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/projects', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                projects = data.projects;
+                const tbody = document.getElementById('projects-table');
+                tbody.innerHTML = '';
+                
+                data.projects.forEach(project => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${project.name}</td>
+                        <td><code>${project.slug}</code></td>
+                        <td>${project.domain || 'N/A'}</td>
+                        <td>${project.port || 'N/A'}</td>
+                        <td><span class="badge bg-${project.status === 'active' ? 'success' : 'secondary'}">${project.status}</span></td>
+                        <td>${new Date(project.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary btn-action" onclick="editProject(${project.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteProject(${project.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            });
+        }
+
+        // 加载用户管理数据
+        function loadUsers() {
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/users', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                users = data.users;
+                const tbody = document.getElementById('users-table');
+                tbody.innerHTML = '';
+                
+                data.users.forEach(user => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${user.email}</td>
+                        <td><span class="badge bg-${getUserTypeColor(user.user_type)}">${user.user_type}</span></td>
+                        <td><span class="badge bg-${user.status === 'active' ? 'success' : 'secondary'}">${user.status}</span></td>
+                        <td>${user.last_login ? new Date(user.last_login).toLocaleString() : '从未登录'}</td>
+                        <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary btn-action" onclick="editUser(${user.id})">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger btn-action" onclick="deleteUser(${user.id})">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            });
+        }
+
+        // 获取用户类型颜色
+        function getUserTypeColor(userType) {
+            switch(userType) {
+                case 'super_admin': return 'danger';
+                case 'admin': return 'warning';
+                case 'vip': return 'info';
+                default: return 'secondary';
+            }
+        }
+
+        // 加载系统设置
+        function loadSettings() {
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/settings', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                // 填充全局设置
+                document.getElementById('system-name').value = data.global.system_name || '';
+                document.getElementById('admin-email').value = data.global.admin_email || '';
+                document.getElementById('max-projects').value = data.global.max_projects_per_user || '';
+                
+                // 填充API设置
+                document.getElementById('seventeentrack-api').value = data.global.seventeentrack_api_key || '';
+                document.getElementById('email-service').value = data.global.email_service || 'sendgrid';
+            });
+        }
+
+        // 加载操作日志
+        function loadLogs() {
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/logs', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                const tbody = document.getElementById('logs-table');
+                tbody.innerHTML = '';
+                
+                data.logs.forEach(log => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${new Date(log.created_at).toLocaleString()}</td>
+                        <td>${log.admin_email}</td>
+                        <td>${log.action}</td>
+                        <td>${log.target_type}</td>
+                        <td>${log.target_id}</td>
+                        <td>${log.ip_address}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            });
+        }
+
+        // 显示新建项目模态框
+        function showCreateProjectModal() {
+            const modal = new bootstrap.Modal(document.getElementById('createProjectModal'));
+            modal.show();
+        }
+
+        // 创建项目
+        function createProject() {
+            const form = document.getElementById('create-project-form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/projects', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('createProjectModal')).hide();
+                    form.reset();
+                    loadProjects();
+                    showAlert('项目创建成功！', 'success');
+                } else {
+                    showAlert(data.message || '创建失败', 'danger');
+                }
+            });
+        }
+
+        // 显示新建用户模态框
+        function showCreateUserModal() {
+            const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
+            modal.show();
+        }
+
+        // 创建用户
+        function createUser() {
+            const form = document.getElementById('create-user-form');
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('createUserModal')).hide();
+                    form.reset();
+                    loadUsers();
+                    showAlert('用户创建成功！', 'success');
+                } else {
+                    showAlert(data.message || '创建失败', 'danger');
+                }
+            });
+        }
+
+        // 保存全局设置
+        document.getElementById('global-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/settings/global', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('设置保存成功！', 'success');
+                } else {
+                    showAlert(data.message || '保存失败', 'danger');
+                }
+            });
+        });
+
+        // 保存API设置
+        document.getElementById('api-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            
+            const token = localStorage.getItem('admin_token');
+            
+            fetch('/api/admin/settings/api', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('API配置保存成功！', 'success');
+                } else {
+                    showAlert(data.message || '保存失败', 'danger');
+                }
+            });
+        });
+
+        // 刷新数据
+        function refreshData() {
+            const currentPage = document.getElementById('page-title').textContent;
+            switch(currentPage) {
+                case '仪表盘':
+                    loadDashboard();
+                    break;
+                case '项目管理':
+                    loadProjects();
+                    break;
+                case '用户管理':
+                    loadUsers();
+                    break;
+                case '系统设置':
+                    loadSettings();
+                    break;
+                case '操作日志':
+                    loadLogs();
+                    break;
+            }
+        }
+
+        // 显示提示信息
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+            alertDiv.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('admin_token');
+            window.location.href = '/login.html';
+        }
+
+        // 编辑项目（占位函数）
+        function editProject(id) {
+            showAlert('编辑功能开发中...', 'info');
+        }
+
+        // 删除项目（占位函数）
+        function deleteProject(id) {
+            if (confirm('确定要删除这个项目吗？')) {
+                showAlert('删除功能开发中...', 'info');
+            }
+        }
+
+        // 编辑用户（占位函数）
+        function editUser(id) {
+            showAlert('编辑功能开发中...', 'info');
+        }
+
+        // 删除用户（占位函数）
+        function deleteUser(id) {
+            if (confirm('确定要删除这个用户吗？')) {
+                showAlert('删除功能开发中...', 'info');
+            }
+        }
     </script>
 </body>
 </html> 
