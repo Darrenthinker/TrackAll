@@ -95,28 +95,34 @@ function detectCarrier(trackingNumber, forcedCarrier) {
     }
     
     const cleanNumber = trackingNumber.replace(/\s+/g, '').toUpperCase();
+    console.log(`识别单号: ${cleanNumber}`);
     
-    // DHL模式识别
-    if (/^(\d{10,11}|[A-Z]{3}\d{9}|\d{12})$/.test(cleanNumber)) {
-        return 'DHL';
-    }
-    
-    // UPS模式识别
+    // UPS模式识别（优先级最高，格式最特殊）
     if (/^1Z[A-Z0-9]{16}$/.test(cleanNumber)) {
+        console.log('匹配UPS模式');
         return 'UPS';
     }
     
-    // FedEx模式识别
-    if (/^(\d{12}|\d{14}|\d{20})$/.test(cleanNumber)) {
-        return 'FedEx';
-    }
-    
-    // 航空单号模式
+    // 航空单号模式（格式特殊）
     if (/^\d{3}-\d{8}$/.test(cleanNumber)) {
+        console.log('匹配航空单号模式');
         return 'Airline';
     }
     
-    // 默认尝试DHL（最常见）
+    // FedEx模式识别（12位、14位、20位数字）
+    if (/^(\d{12}|\d{14}|\d{20})$/.test(cleanNumber)) {
+        console.log('匹配FedEx模式');
+        return 'FedEx';
+    }
+    
+    // DHL模式识别（10-11位数字或字母+数字组合）
+    if (/^(\d{10,11}|[A-Z]{3}\d{9})$/.test(cleanNumber)) {
+        console.log('匹配DHL模式');
+        return 'DHL';
+    }
+    
+    // 如果都不匹配，默认尝试DHL（最常见）
+    console.log('未匹配特定模式，默认DHL');
     return 'DHL';
 }
 
@@ -156,7 +162,7 @@ async function trackDHL(trackingNumber) {
             };
         } else {
             // DHL没有数据，尝试17track
-            console.log(`DHL未找到数据，尝试17track: ${trackingNumber}`);
+            console.log(`===== DHL未找到数据，开始尝试17track: ${trackingNumber} =====`);
             return await try17track(trackingNumber, 'DHL');
         }
         
