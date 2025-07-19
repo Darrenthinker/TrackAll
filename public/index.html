@@ -3859,6 +3859,8 @@
 
         async function queryTracking(trackingNumbers) {
             try {
+                console.log('queryTracking被调用，输入:', trackingNumbers);
+                
                 const response = await fetch('/api/tracking', {
                     method: 'POST',
                     headers: {
@@ -3869,11 +3871,18 @@
                     })
                 });
 
+                console.log('fetch响应状态:', response.status);
                 const data = await response.json();
-                return data.results || [];
+                console.log('fetch响应数据:', data);
+                
+                const results = data.results || [];
+                console.log('提取的results:', results);
+                console.log('返回results长度:', results.length);
+                
+                return results;
                 
             } catch (error) {
-                console.error('查询错误:', error);
+                console.error('queryTracking内部错误:', error);
                 return trackingNumbers.map(trackingNumber => ({
                     success: false,
                     trackingNumber: trackingNumber.trim(),
@@ -4379,6 +4388,10 @@
             
             try {
                 const results = await queryTracking(trackingNumbers);
+                console.log('查询完成，结果:', results);
+                console.log('结果类型:', typeof results);
+                console.log('是否为数组:', Array.isArray(results));
+                console.log('数组长度:', results ? results.length : 'N/A');
                 renderResultsPage(results);
             } catch (error) {
                 console.error('查询错误:', error);
@@ -4420,10 +4433,17 @@
 
         // 渲染结果页面
         function renderResultsPage(results) {
+            console.log('renderResultsPage被调用');
+            console.log('接收到的results:', results);
+            console.log('results类型:', typeof results);
+            console.log('results是否为数组:', Array.isArray(results));
+            console.log('results长度:', results ? results.length : 'N/A');
+            
             const resultsContent = document.getElementById('resultsContent');
             const statusSummary = document.getElementById('statusSummary');
             
             if (!results || results.length === 0) {
+                console.log('条件判断: 显示无结果');
                 resultsContent.innerHTML = '<div class="no-results">没有找到查询结果</div>';
                 statusSummary.innerHTML = `
                     <div class="status-tab tab-total">
