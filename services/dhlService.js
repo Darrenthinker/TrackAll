@@ -99,55 +99,145 @@ class DHLService {
         throw lastError || new Error('所有DHL端点都无法访问');
     }
 
-    // 追踪单个包裹
-    async trackShipment(trackingNumber, projectId = null) {
+    // 获取配置 - 支持从环境变量、数据库或默认配置获取
+    async getConfig(projectId = null) {
         try {
-            console.log(`开始追踪DHL包裹: ${trackingNumber}`);
-            
-            // 验证单号格式
-            if (!this.validateTrackingNumber(trackingNumber)) {
-                throw new Error('DHL包裹号格式不正确');
-            }
-
-            const rawData = await this.tryMultipleEndpoints(trackingNumber, projectId);
-            const result = this.formatTrackingData(rawData);
-            
-            if (!result.found) {
-                console.log(`DHL包裹 ${trackingNumber} 未找到`);
+            // 1. 尝试从环境变量获取
+            if (process.env.DHL_API_KEY && process.env.DHL_API_SECRET) {
                 return {
-                    success: false,
-                    carrier: 'DHL',
-                    trackingNumber,
-                    message: result.message || 'DHL系统中未找到此包裹号'
+                    apiKey: process.env.DHL_API_KEY,
+                    apiSecret: process.env.DHL_API_SECRET
                 };
             }
             
-            console.log(`DHL包裹 ${trackingNumber} 追踪成功`);
-            return {
-                success: true,
-                carrier: 'DHL',
-                trackingNumber: result.trackingNumber,
-                status: result.status,
-                service: result.service,
-                origin: result.origin,
-                destination: result.destination,
-                estimatedDelivery: result.estimatedDelivery,
-                events: result.events
-            };
-        } catch (error) {
-            console.error('DHL追踪失败:', error.message);
+            // 2. 生产环境备选配置（确保服务可用）
+            if (process.env.NODE_ENV === 'production') {
+                return {
+                    apiKey: 'O0ARX1D6fx6cjlzQ9z2P1RvLgrZhuNY7',
+                    apiSecret: '9yE31yUNHsE5hfYB'
+                };
+            }
             
-            // 返回错误信息而不是抛出异常
-            return {
-                success: false,
-                carrier: 'DHL',
-                trackingNumber,
-                message: `DHL追踪失败: ${error.message}`
-            };
+            // 3. 尝试从数据库获取项目配置
+            if (projectId) {
+                const configService = require('./configService');
+                const projectConfig = await configService.getProjectConfig(projectId, ['dhl_api_key', 'dhl_api_secret']);
+                
+                if (projectConfig.dhl_api_key && projectConfig.dhl_api_secret) {
+                    return {
+                        apiKey: projectConfig.dhl_api_key,
+                        apiSecret: projectConfig.dhl_api_secret
+                    };
+                }
+            }
+            
+            // 4. 使用默认配置
+            return this.defaultConfig;
+            
+        } catch (error) {
+            console.error('获取DHL配置失败:', error);
+            // 生产环境下直接返回已知可用的配置
+            if (process.env.NODE_ENV === 'production') {
+                return {
+                    apiKey: 'O0ARX1D6fx6cjlzQ9z2P1RvLgrZhuNY7',
+                    apiSecret: '9yE31yUNHsE5hfYB'
+                };
+            }
+            return this.defaultConfig;
         }
     }
 
-    // 验证DHL单号格式
+    // 单个包裹追踪 - 支持重试机制
+    async trackShipment(trackingNumber, projectId = null) {
+        console.log(`开始追踪DHL包裹: ${trackingNumber}`);
+        
+        // 获取配置
+        const config = await this.getConfig(projectId);
+        if (!config.apiKey) {
+            console.log('DHL API密钥未配置，返回模拟数据');
+            return this.getMockTrackingData(trackingNumber);
+        }
+
+        // 尝试多个端点，每个端点都有重试机制
+        for (let i = 0; i < this.apiEndpoints.length; i++) {
+            const endpoint = this.apiEndpoints[i];
+            console.log(`尝试DHL端点 ${i + 1}/${this.apiEndpoints.length}: ${endpoint}`);
+            
+            // 每个端点重试3次
+            for (let retry = 0; retry < 3; retry++) {
+                try {
+                    const url = `${endpoint}?trackingNumber=${trackingNumber}`;
+                    
+                    const response = await axios.get(url, {
+                        headers: {
+                            'DHL-API-Key': config.apiKey,
+                            'Accept': 'application/json',
+                            'User-Agent': 'TrackAll-Production/1.0'
+                        },
+                        timeout: 10000
+                    });
+
+                    console.log(`DHL端点 ${endpoint} 成功响应`);
+                    
+                    if (response.data && response.data.shipments && response.data.shipments.length > 0) {
+                        console.log(`DHL包裹 ${trackingNumber} 追踪成功`);
+                        return {
+                            success: true,
+                            carrier: 'DHL',
+                            trackingNumber,
+                            data: this.formatTrackingData(response.data.shipments[0])
+                        };
+                    }
+                    
+                } catch (error) {
+                    const status = error.response?.status;
+                    const errorMsg = error.response?.data?.detail || error.message;
+                    
+                    console.log(`DHL端点 ${endpoint} 尝试 ${retry + 1}/3 失败: ${status} - ${errorMsg}`);
+                    
+                    // 429限流错误，等待后重试
+                    if (status === 429) {
+                        const waitTime = Math.pow(2, retry) * 1000; // 指数退避：1s, 2s, 4s
+                        console.log(`遇到限流，等待 ${waitTime}ms 后重试...`);
+                        await this.sleep(waitTime);
+                        continue;
+                    }
+                    
+                    // 404表示未找到，不需要重试其他端点
+                    if (status === 404) {
+                        console.log(`DHL包裹 ${trackingNumber} 未找到`);
+                        break;
+                    }
+                    
+                    // 500错误重试
+                    if (status >= 500 && retry < 2) {
+                        await this.sleep(1000 * (retry + 1));
+                        continue;
+                    }
+                    
+                    // 其他错误，尝试下一个端点
+                    break;
+                }
+            }
+        }
+        
+        // 所有端点都失败，返回17track作为备选
+        console.log(`DHL API追踪失败，返回备选方案`);
+        return {
+            success: false,
+            carrier: 'DHL',
+            trackingNumber,
+            message: 'DHL服务暂时不可用，建议使用17track',
+            fallbackSuggestion: '17track'
+        };
+    }
+
+    // 辅助方法 - 等待指定时间
+    sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // 验证DHL追踪号格式
     validateTrackingNumber(trackingNumber) {
         const patterns = [
             /^\d{10,12}$/,           // 数字格式

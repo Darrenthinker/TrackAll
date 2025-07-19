@@ -61,48 +61,49 @@ class TrackingService {
             // 调用DHL服务
             const result = await dhlService.trackShipment(trackingNumber);
             
-            if (!result.found) {
+            if (result.success) {
+                return {
+                    success: true,
+                    carrier: 'DHL',
+                    trackingNumber: result.trackingNumber,
+                    status: result.data?.status || 'In Transit',
+                    service: result.data?.service || 'DHL Express',
+                    origin: result.data?.origin,
+                    destination: result.data?.destination,
+                    estimatedDelivery: result.data?.estimatedDelivery,
+                    events: result.data?.events || []
+                };
+            } else {
+                // DHL API失败，检查是否建议使用备选方案
+                if (result.fallbackSuggestion === '17track') {
+                    console.log('DHL API失败，尝试使用17track备选服务...');
+                    try {
+                        const fallbackResult = await seventeentrackService.trackShipment(trackingNumber, 'dhl');
+                        
+                        if (fallbackResult.success) {
+                            return {
+                                success: true,
+                                carrier: 'DHL',
+                                trackingNumber,
+                                status: fallbackResult.status || 'In Transit',
+                                events: fallbackResult.events || [],
+                                source: '17track (备选服务)'
+                            };
+                        }
+                    } catch (fallbackError) {
+                        console.error('17track备选服务也失败:', fallbackError);
+                    }
+                }
+                
                 return {
                     success: false,
                     carrier: 'DHL',
                     trackingNumber,
-                    message: result.message
+                    message: result.message || 'DHL包裹未找到'
                 };
             }
-            
-            return {
-                success: true,
-                carrier: 'DHL',
-                trackingNumber: result.trackingNumber,
-                status: result.status,
-                service: result.service,
-                origin: result.origin,
-                destination: result.destination,
-                estimatedDelivery: result.estimatedDelivery,
-                events: result.events
-            };
         } catch (error) {
-            console.error('DHL追踪失败:', error);
-            
-            // 如果DHL API失败，尝试使用17track作为备选
-            try {
-                console.log('DHL API失败，尝试使用17track备选服务...');
-                const fallbackResult = await seventeentrackService.trackShipment(trackingNumber, 'dhl');
-                
-                if (fallbackResult.success) {
-                    return {
-                        success: true,
-                        carrier: 'DHL',
-                        trackingNumber,
-                        status: fallbackResult.data.status,
-                        events: fallbackResult.data.events,
-                        source: '17track (备选)'
-                    };
-                }
-            } catch (fallbackError) {
-                console.error('17track备选服务也失败:', fallbackError);
-            }
-            
+            console.error('DHL追踪异常:', error);
             throw new Error(`DHL追踪失败: ${error.message}`);
         }
     }

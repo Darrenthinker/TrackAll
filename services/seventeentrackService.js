@@ -3,8 +3,24 @@ const axios = require('axios');
 class SeventeenTrackService {
     constructor() {
         this.baseURL = 'https://api.17track.net/track/v2.2';
-        this.apiKey = process.env.SEVENTEENTRACK_API_KEY || 'demo-17track-key';
+        this.apiKey = this.getApiKey();
         this.timeout = 15000; // 15秒超时
+    }
+    
+    // 获取API密钥 - 支持备选配置
+    getApiKey() {
+        // 优先使用环境变量
+        if (process.env.SEVENTEENTRACK_API_KEY) {
+            return process.env.SEVENTEENTRACK_API_KEY;
+        }
+        
+        // 生产环境备选配置
+        if (process.env.NODE_ENV === 'production') {
+            return 'D5D021BFC8A9F142EFE33A2E3EDD247C';
+        }
+        
+        // 开发环境默认
+        return 'demo-17track-key';
     }
 
     // 追踪包裹 - 支持指定承运商
@@ -163,15 +179,28 @@ class SeventeenTrackService {
     // 映射承运商代码
     mapCarrierCode(carrier) {
         const carrierMap = {
-            'dhl': 'dhl',
-            'ups': 'ups',
-            'fedex': 'fedex',
-            'tnt': 'tnt',
-            'usps': 'usps',
-            'ems': 'ems',
-            'china-post': 'china-post'
+            'dhl': 6,        // DHL的正确代码是6
+            'ups': 2,        // UPS的代码是2  
+            'fedex': 3,      // FedEx的代码是3
+            'tnt': 259,      // TNT的代码是259
+            'usps': 34,      // USPS的代码是34
+            'ems': 1031,     // EMS的代码是1031
+            'china-post': 1000 // China Post的代码是1000
         };
-        return carrierMap[carrier.toLowerCase()] || carrier;
+        
+        // 如果是字符串，转换为小写后查找
+        if (typeof carrier === 'string') {
+            const normalizedCarrier = carrier.toLowerCase().replace(/[^a-z]/g, '');
+            if (normalizedCarrier.includes('dhl')) return 6;
+            if (normalizedCarrier.includes('ups')) return 2;
+            if (normalizedCarrier.includes('fedex')) return 3;
+            if (normalizedCarrier.includes('tnt')) return 259;
+            if (normalizedCarrier.includes('usps')) return 34;
+            if (normalizedCarrier.includes('ems')) return 1031;
+            return carrierMap[normalizedCarrier] || '';
+        }
+        
+        return carrier;
     }
 
     // 获取承运商名称
